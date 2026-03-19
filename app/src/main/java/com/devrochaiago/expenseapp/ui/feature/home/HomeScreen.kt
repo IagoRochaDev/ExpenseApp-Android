@@ -1,7 +1,6 @@
-package com.devrochaiago.expenseapp.ui.home
+package com.devrochaiago.expenseapp.ui.feature.home
 
 import android.content.res.Configuration
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items

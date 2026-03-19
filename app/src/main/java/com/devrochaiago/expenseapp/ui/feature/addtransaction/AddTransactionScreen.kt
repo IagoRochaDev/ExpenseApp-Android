@@ -1,17 +1,49 @@
 package com.devrochaiago.expenseapp.ui.feature.addtransaction
 
 import android.content.res.Configuration
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -25,7 +57,7 @@ import com.devrochaiago.expenseapp.ui.theme.RedExpense
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTransactionScreen(
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier.Companion,
     onNavigateBack: () -> Unit = {}
 ) {
 
@@ -59,21 +91,23 @@ fun AddTransactionScreen(
         modifier = modifier.fillMaxSize()
     ) { paddingValues ->
         Column(
-            modifier = Modifier
+            modifier = Modifier.Companion
                 .padding(paddingValues)
                 .padding(horizontal = 24.dp)
                 .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.Companion.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.Companion.height(16.dp))
 
             // 1. Seletor de Tipo (Despesa vs Receita)
             TransactionTypeSelector(
                 isExpense = isExpense,
-                onTypeSelected = { isExpense = it; selectedCategory = if (it) "Alimentação" else "Salário" }
+                onTypeSelected = {
+                    isExpense = it; selectedCategory = if (it) "Alimentação" else "Salário"
+                }
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.Companion.height(32.dp))
 
             // 2. Campo de Valor Gigante
             Text(
@@ -85,8 +119,8 @@ fun AddTransactionScreen(
                 value = amount,
                 onValueChange = { amount = it },
                 textStyle = MaterialTheme.typography.displayMedium.copy(
-                    textAlign = TextAlign.Center,
-                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Companion.Center,
+                    fontWeight = FontWeight.Companion.Bold,
                     color = if (isExpense) RedExpense else GreenIncome
                 ),
                 prefix = {
@@ -96,45 +130,45 @@ fun AddTransactionScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Companion.Decimal),
                 singleLine = true,
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color.Transparent,
-                    unfocusedBorderColor = Color.Transparent,
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent
+                    focusedBorderColor = Color.Companion.Transparent,
+                    unfocusedBorderColor = Color.Companion.Transparent,
+                    focusedContainerColor = Color.Companion.Transparent,
+                    unfocusedContainerColor = Color.Companion.Transparent
                 ),
                 placeholder = {
                     Text(
                         "0,00",
                         style = MaterialTheme.typography.displayMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
+                        textAlign = TextAlign.Companion.Center,
+                        modifier = Modifier.Companion.fillMaxWidth()
                     )
                 },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.Companion.fillMaxWidth()
             )
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.Companion.height(32.dp))
 
             // 3. Campos de Detalhes
             OutlinedTextField(
                 value = title,
                 onValueChange = { title = it },
                 label = { Text("Título (Ex: Conta de Luz)") },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.Companion.fillMaxWidth(),
                 singleLine = true,
                 shape = RoundedCornerShape(12.dp)
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.Companion.height(16.dp))
 
             // Dropdown de Categoria usando M3
             ExposedDropdownMenuBox(
                 expanded = expandedCategory,
                 onExpandedChange = { expandedCategory = !expandedCategory },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.Companion.fillMaxWidth()
             ) {
                 OutlinedTextField(
                     value = selectedCategory,
@@ -142,8 +176,8 @@ fun AddTransactionScreen(
                     readOnly = true,
                     label = { Text("Categoria") },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedCategory) },
-                    modifier = Modifier.menuAnchor().fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
+                    modifier = Modifier.Companion.menuAnchor().fillMaxWidth(),
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
                 )
                 ExposedDropdownMenu(
                     expanded = expandedCategory,
@@ -161,7 +195,7 @@ fun AddTransactionScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.Companion.height(16.dp))
 
             // Seletor de Data (Visual)
             OutlinedTextField(
@@ -171,30 +205,33 @@ fun AddTransactionScreen(
                 label = { Text("Data") },
                 trailingIcon = {
                     IconButton(onClick = { showDatePicker = true }) {
-                        Icon(imageVector = Icons.Default.CalendarMonth, contentDescription = "Selecionar Data")
+                        Icon(
+                            imageVector = Icons.Default.CalendarMonth,
+                            contentDescription = "Selecionar Data"
+                        )
                     }
                 },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
+                modifier = Modifier.Companion.fillMaxWidth(),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp)
             )
 
-            Spacer(modifier = Modifier.weight(1f)) // Empurra o botão de salvar para o fundo
+            Spacer(modifier = Modifier.Companion.weight(1f)) // Empurra o botão de salvar para o fundo
 
             // 4. Botão de Salvar
             Button(
                 onClick = { /* TODO: Salvar transação e voltar */ onNavigateBack() },
-                modifier = Modifier
+                modifier = Modifier.Companion
                     .fillMaxWidth()
                     .height(56.dp)
                     .padding(bottom = 16.dp),
-                shape = RoundedCornerShape(16.dp),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (isExpense) RedExpense else GreenIncome
                 )
             ) {
                 Icon(imageVector = Icons.Default.Check, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Salvar Transação", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.Companion.width(8.dp))
+                Text("Salvar Transação", fontSize = 16.sp, fontWeight = FontWeight.Companion.Bold)
             }
         }
 
@@ -227,49 +264,49 @@ private fun TransactionTypeSelector(
     onTypeSelected: (Boolean) -> Unit
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.Companion.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // Botão Despesa
         OutlinedButton(
             onClick = { onTypeSelected(true) },
-            modifier = Modifier.weight(1f).height(48.dp),
-            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.Companion.weight(1f).height(48.dp),
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
             colors = ButtonDefaults.outlinedButtonColors(
-                containerColor = if (isExpense) RedExpense.copy(alpha = 0.1f) else Color.Transparent,
+                containerColor = if (isExpense) RedExpense.copy(alpha = 0.1f) else Color.Companion.Transparent,
                 contentColor = if (isExpense) RedExpense else MaterialTheme.colorScheme.onSurfaceVariant
             ),
             border = ButtonDefaults.outlinedButtonBorder.copy(
-                brush = androidx.compose.ui.graphics.SolidColor(
+                brush = SolidColor(
                     if (isExpense) RedExpense else MaterialTheme.colorScheme.outline
                 )
             )
         ) {
-            Text("Despesa", fontWeight = FontWeight.SemiBold)
+            Text("Despesa", fontWeight = FontWeight.Companion.SemiBold)
         }
 
         // Botão Receita
         OutlinedButton(
             onClick = { onTypeSelected(false) },
-            modifier = Modifier.weight(1f).height(48.dp),
-            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.Companion.weight(1f).height(48.dp),
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
             colors = ButtonDefaults.outlinedButtonColors(
-                containerColor = if (!isExpense) GreenIncome.copy(alpha = 0.1f) else Color.Transparent,
+                containerColor = if (!isExpense) GreenIncome.copy(alpha = 0.1f) else Color.Companion.Transparent,
                 contentColor = if (!isExpense) GreenIncome else MaterialTheme.colorScheme.onSurfaceVariant
             ),
             border = ButtonDefaults.outlinedButtonBorder.copy(
-                brush = androidx.compose.ui.graphics.SolidColor(
+                brush = SolidColor(
                     if (!isExpense) GreenIncome else MaterialTheme.colorScheme.outline
                 )
             )
         ) {
-            Text("Receita", fontWeight = FontWeight.SemiBold)
+            Text("Receita", fontWeight = FontWeight.Companion.SemiBold)
         }
     }
 }
 
-//@Preview(name = "Light Mode", showBackground = true)
-@Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
+@Preview(name = "Light Mode", showBackground = true)
+//@Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
 @Composable
 private fun AddTransactionScreenPreview() {
     ExpenseAppTheme {
