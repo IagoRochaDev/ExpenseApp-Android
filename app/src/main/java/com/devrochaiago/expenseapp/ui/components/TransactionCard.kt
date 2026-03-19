@@ -1,4 +1,4 @@
-package com.devrochaiago.expenseapp.ui.theme.components
+package com.devrochaiago.expenseapp.ui.components
 
 import android.content.res.Configuration
 import androidx.compose.foundation.background
