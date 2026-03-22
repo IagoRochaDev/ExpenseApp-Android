@@ -1,12 +1,15 @@
 package com.devrochaiago.expenseapp.ui.feature.home
 
 import android.content.res.Configuration
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -28,6 +31,7 @@ import com.devrochaiago.expenseapp.ui.theme.ExpenseAppTheme
 fun HomeRoute(
     onNavigateToAddTransaction: () -> Unit,
     onNavigateToStatistics: () -> Unit,
+    onNavigateToTransactions: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
 
@@ -36,7 +40,8 @@ fun HomeRoute(
     HomeScreen(
         uiState = uiState,
         onAddClick = onNavigateToAddTransaction ,
-        onStatisticsClick = onNavigateToStatistics
+        onStatisticsClick = onNavigateToStatistics,
+        onTransactionsClick = onNavigateToTransactions
     )
 }
 
@@ -46,6 +51,7 @@ fun HomeScreen(
     uiState: HomeUiState,
     onAddClick: () -> Unit,
     onStatisticsClick: () -> Unit = {},
+    onTransactionsClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
 
@@ -74,17 +80,38 @@ fun HomeScreen(
 
             item {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "Olá, Iago",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "Bem-vindo de volta!",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(
+                                text = "Olá, Iago",
+                                style = MaterialTheme.typography.titleLarge,
+                                color = MaterialTheme.colorScheme.onBackground,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Bem-vindo de volta!",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        OutlinedIconButton(
+                            onClick = onStatisticsClick,
+                            modifier = Modifier.size(48.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.BarChart,
+                                contentDescription = "Estatísticas",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
 
                     Spacer(modifier = Modifier.height(24.dp))
 
@@ -107,8 +134,8 @@ fun HomeScreen(
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onBackground
                         )
-                        TextButton(onClick = onStatisticsClick) {
-                            Text(text = "Estatisticas")
+                        TextButton(onClick = onTransactionsClick) {
+                            Text(text = "Ver Todas")
                         }
                     }
 
@@ -140,7 +167,9 @@ private fun HomeScreenPreview() {
     ExpenseAppTheme {
         HomeScreen(
             uiState = HomeUiState(),
-            onAddClick = {}
+            onAddClick = {},
+            onTransactionsClick = {},
+            onStatisticsClick = {}
         )
     }
 }

@@ -9,6 +9,7 @@ import androidx.navigation.compose.rememberNavController
 import com.devrochaiago.expenseapp.ui.feature.addtransaction.AddTransactionRoute
 import com.devrochaiago.expenseapp.ui.feature.home.HomeRoute
 import com.devrochaiago.expenseapp.ui.feature.statistics.StatisticsRoute
+import com.devrochaiago.expenseapp.ui.feature.transactions.TransactionsRoute
 
 @Composable
 fun ExpenseNavHost(
@@ -24,9 +25,19 @@ fun ExpenseNavHost(
             HomeRoute(
                 onNavigateToAddTransaction = {
                     navController.navigate("add_transaction")
-                } ,
-                        onNavigateToStatistics = {
+                },
+                onNavigateToTransactions = {
+                    navController.navigate("transactions")
+                },
+                onNavigateToStatistics = {
                     navController.navigate("statistics")
+                }
+            )
+        }
+        composable("transactions") {
+            TransactionsRoute(
+                onNavigateBack = {
+                    navController.popBackStack()
                 }
             )
         }
