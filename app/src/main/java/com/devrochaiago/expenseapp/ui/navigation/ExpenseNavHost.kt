@@ -49,7 +49,11 @@ fun ExpenseNavHost(
             )
         }
         composable("statistics") {
-            StatisticsRoute()
+            StatisticsRoute(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
         }
     }
 }

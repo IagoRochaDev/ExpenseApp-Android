@@ -11,10 +11,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Movie
-import androidx.compose.material.icons.filled.Restaurant
-import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -35,12 +32,14 @@ import com.devrochaiago.expenseapp.core.utils.toBRL
 
 @Composable
 fun StatisticsRoute(
+    onNavigateBack: () -> Unit,
     viewModel: StatisticsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     StatisticsScreen(
-        uiState = uiState
+        uiState = uiState,
+        onNavigateBack = onNavigateBack
     )
 }
 
@@ -48,14 +47,29 @@ fun StatisticsRoute(
 @Composable
 fun StatisticsScreen(
     uiState: StatisticsUiState,
+    onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
 
     Scaffold(
-        topBar = { //TODO: Repensar esse topo de dela
-            TopAppBar(
-                title = { Text("Estatísticas", fontWeight = FontWeight.Bold) },
-                colors = TopAppBarDefaults.topAppBarColors(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { 
+                    Text(
+                        text = "Estatísticas", 
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold 
+                    ) 
+                },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack, 
+                            contentDescription = "Voltar"
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background
                 )
             )
@@ -271,10 +285,12 @@ fun CategoryStatItem(
 
 
 @Preview(name = "Light Mode", showBackground = true)
-//@Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
 @Composable
 private fun StatisticsScreenPreview() {
     ExpenseAppTheme {
-        // StatisticsScreen() // Removed to fix preview error as it requires uiState
+        StatisticsScreen(
+            uiState = StatisticsUiState(isLoading = false),
+            onNavigateBack = {}
+        )
     }
 }

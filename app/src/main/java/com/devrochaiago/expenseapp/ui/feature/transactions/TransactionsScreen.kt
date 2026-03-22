@@ -4,7 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -43,14 +43,23 @@ fun TransactionsScreen(
 ) {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Todas as Transações", fontWeight = FontWeight.Bold) },
+            CenterAlignedTopAppBar(
+                title = { 
+                    Text(
+                        text = "Histórico", 
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold 
+                    ) 
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Voltar")
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack, 
+                            contentDescription = "Voltar"
+                        )
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background
                 )
             )
