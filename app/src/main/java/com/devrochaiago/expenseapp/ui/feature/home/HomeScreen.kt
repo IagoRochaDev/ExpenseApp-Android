@@ -139,6 +139,9 @@ fun HomeScreen(
 @Composable
 private fun HomeScreenPreview() {
     ExpenseAppTheme {
-        HomeScreen()
+        HomeScreen(
+            uiState = HomeUiState(),
+            onAddClick = {}
+        )
     }
 }

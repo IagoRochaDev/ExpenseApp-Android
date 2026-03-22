@@ -30,11 +30,22 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     buildFeatures {
         compose = true
+    }
+}
+
+kotlin {
+    jvmToolchain(17)
+}
+
+// Force a newer version of JavaPoet to resolve Hilt/Room conflicts
+configurations.all {
+    resolutionStrategy {
+        force("com.squareup:javapoet:1.13.0")
     }
 }
 
