@@ -24,34 +24,32 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.devrochaiago.expenseapp.ui.theme.ExpenseAppTheme
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.devrochaiago.expenseapp.core.utils.toBRL
 
+@Composable
+fun StatisticsRoute(
+    viewModel: StatisticsViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsState()
 
-data class CategoryStat(
-    val id: Int,
-    val name: String,
-    val amount: Float,
-    val formattedAmount: String,
-    val color: Color,
-    val icon: ImageVector
-)
+    StatisticsScreen(
+        uiState = uiState
+    )
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StatisticsScreen(
+    uiState: StatisticsUiState,
     modifier: Modifier = Modifier
 ) {
-
-    val mockStats = listOf(
-        CategoryStat(1, "Moradia", 1500f, "R$ 1.500,00", Color(0xFF3B82F6), Icons.Default.Home),
-        CategoryStat(2, "Alimentação", 900f, "R$ 900,00", Color(0xFFF59E0B), Icons.Default.Restaurant),
-        CategoryStat(3, "Supermercado", 600f, "R$ 600,00", Color(0xFF10B981), Icons.Default.ShoppingCart),
-        CategoryStat(4, "Lazer", 300f, "R$ 300,00", Color(0xFF8B5CF6), Icons.Default.Movie)
-    )
-
-    val totalAmount = mockStats.sumOf { it.amount.toDouble() }.toFloat()
 
     Scaffold(
         topBar = { //TODO: Repensar esse topo de dela
@@ -65,6 +63,31 @@ fun StatisticsScreen(
         containerColor = MaterialTheme.colorScheme.background,
         modifier = modifier.fillMaxSize()
     ) { paddingValues ->
+
+        if (uiState.isLoading) {
+            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+            return@Scaffold
+        }
+
+        // Se não houver despesas, mostramos uma mensagem amigável
+        if (uiState.categoryStats.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize().padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "Nenhuma despesa registrada ainda. \nQue ótimo! \uD83C\uDF89",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+            }
+            return@Scaffold
+        }
+
+
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -81,8 +104,8 @@ fun StatisticsScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     DonutChart(
-                        data = mockStats,
-                        totalAmount = totalAmount,
+                        data = uiState.categoryStats,
+                        totalAmount = uiState.totalExpense,
                         modifier = Modifier.size(200.dp)
                     )
                 }
@@ -100,8 +123,8 @@ fun StatisticsScreen(
             }
 
             // 2. Lista Resumo por Categoria
-            items(mockStats, key = { it.id }) { stat ->
-                val percentage = (stat.amount / totalAmount)
+            items(uiState.categoryStats, key = { it.id }) { stat ->
+                val percentage = if (uiState.totalExpense > 0) (stat.amount / uiState.totalExpense) else 0f
                 CategoryStatItem(
                     stat = stat,
                     percentage = percentage,
@@ -252,6 +275,6 @@ fun CategoryStatItem(
 @Composable
 private fun StatisticsScreenPreview() {
     ExpenseAppTheme {
-        StatisticsScreen()
+        // StatisticsScreen() // Removed to fix preview error as it requires uiState
     }
 }

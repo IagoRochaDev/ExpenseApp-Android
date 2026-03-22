@@ -31,6 +31,7 @@ import com.devrochaiago.expenseapp.domain.model.TransactionType
 @Composable
 fun HomeRoute(
     onNavigateToAddTransaction: () -> Unit,
+    onNavigateToStatistics: () -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
 
@@ -38,7 +39,8 @@ fun HomeRoute(
 
     HomeScreen(
         uiState = uiState,
-        onAddClick = onNavigateToAddTransaction
+        onAddClick = onNavigateToAddTransaction ,
+        onStatisticsClick = onNavigateToStatistics
     )
 }
 
@@ -47,6 +49,7 @@ fun HomeRoute(
 fun HomeScreen(
     uiState: HomeUiState,
     onAddClick: () -> Unit,
+    onStatisticsClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
 
@@ -108,8 +111,8 @@ fun HomeScreen(
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onBackground
                         )
-                        TextButton(onClick = { /* TODO: Ir para aba de todas transações */ }) {
-                            Text(text = "Ver tudo")
+                        TextButton(onClick = onStatisticsClick) {
+                            Text(text = "Estatisticas")
                         }
                     }
 
