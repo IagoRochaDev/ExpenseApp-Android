@@ -7,27 +7,23 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.DirectionsCar
-import androidx.compose.material.icons.filled.Fastfood
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.devrochaiago.expenseapp.core.utils.getCategoryIcon
+import com.devrochaiago.expenseapp.core.utils.toBRL
+import com.devrochaiago.expenseapp.domain.model.TransactionType
 import com.devrochaiago.expenseapp.ui.components.BalanceCard
 import com.devrochaiago.expenseapp.ui.components.TransactionCard
 import com.devrochaiago.expenseapp.ui.theme.ExpenseAppTheme
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.hilt.navigation.compose.hiltViewModel
-import com.devrochaiago.expenseapp.core.utils.toBRL
-import com.devrochaiago.expenseapp.domain.model.TransactionType
-// Classe temporária para Mock de Dados
+
 @Composable
 fun HomeRoute(
     onNavigateToAddTransaction: () -> Unit,
@@ -129,7 +125,7 @@ fun HomeScreen(
                     date = "Hoje",
                     amount = transaction.amount.toBRL(),
                     isIncome = transaction.type == TransactionType.INCOME,
-                    icon = Icons.Default.ShoppingCart,
+                    icon = getCategoryIcon(transaction.category),
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
                 )
             }
