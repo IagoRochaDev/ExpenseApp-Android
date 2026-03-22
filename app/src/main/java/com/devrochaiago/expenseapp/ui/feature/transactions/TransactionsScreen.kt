@@ -19,6 +19,7 @@ import com.devrochaiago.expenseapp.core.utils.getCategoryIcon
 import com.devrochaiago.expenseapp.core.utils.toBRL
 import com.devrochaiago.expenseapp.domain.model.TransactionType
 import com.devrochaiago.expenseapp.ui.components.TransactionCard
+import com.devrochaiago.expenseapp.core.utils.toRelativeDateString
 
 @Composable
 fun TransactionsRoute(
@@ -92,7 +93,7 @@ fun TransactionsScreen(
                 TransactionCard(
                     title = transaction.title,
                     category = transaction.category,
-                    date = "Hoje", // TODO: Formatar data corretamente
+                    date = transaction.dateMillis.toRelativeDateString(),
                     amount = transaction.amount.toBRL(),
                     isIncome = transaction.type == TransactionType.INCOME,
                     icon = getCategoryIcon(transaction.category),

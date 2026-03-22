@@ -26,7 +26,7 @@ import com.devrochaiago.expenseapp.domain.model.TransactionType
 import com.devrochaiago.expenseapp.ui.components.BalanceCard
 import com.devrochaiago.expenseapp.ui.components.TransactionCard
 import com.devrochaiago.expenseapp.ui.theme.ExpenseAppTheme
-
+import com.devrochaiago.expenseapp.core.utils.toRelativeDateString
 @Composable
 fun HomeRoute(
     onNavigateToAddTransaction: () -> Unit,
@@ -149,7 +149,7 @@ fun HomeScreen(
                 TransactionCard(
                     title = transaction.title,
                     category = transaction.category,
-                    date = "Hoje",
+                    date = transaction.dateMillis.toRelativeDateString(),
                     amount = transaction.amount.toBRL(),
                     isIncome = transaction.type == TransactionType.INCOME,
                     icon = getCategoryIcon(transaction.category),
