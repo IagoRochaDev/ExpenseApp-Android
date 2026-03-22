@@ -22,36 +22,40 @@ import androidx.compose.ui.unit.dp
 import com.devrochaiago.expenseapp.ui.components.BalanceCard
 import com.devrochaiago.expenseapp.ui.components.TransactionCard
 import com.devrochaiago.expenseapp.ui.theme.ExpenseAppTheme
-
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.devrochaiago.expenseapp.core.utils.toBRL
+import com.devrochaiago.expenseapp.domain.model.TransactionType
 // Classe temporária para Mock de Dados
-data class MockTransaction(
-    val id: Int,
-    val title: String,
-    val category: String,
-    val date: String,
-    val amount: String,
-    val isIncome: Boolean,
-    val icon: ImageVector
-)
+@Composable
+fun HomeRoute(
+    onNavigateToAddTransaction: () -> Unit,
+    viewModel: HomeViewModel = hiltViewModel()
+) {
+
+    val uiState by viewModel.uiState.collectAsState()
+
+    HomeScreen(
+        uiState = uiState,
+        onAddClick = onNavigateToAddTransaction
+    )
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(modifier: Modifier = Modifier) {
-    // Mock Data para a nossa lista
-    val recentTransactions = listOf(
-        MockTransaction(1, "Supermercado Extra", "Alimentação", "Hoje", "R$ 450,00", false, Icons.Default.ShoppingCart),
-        MockTransaction(2, "Salário Tech Lead", "Renda", "Ontem", "R$ 12.000,00", true, Icons.Default.Work),
-        MockTransaction(3, "Uber", "Transporte", "17 de Março", "R$ 35,50", false, Icons.Default.DirectionsCar),
-        MockTransaction(4, "Ifood Lanche", "Alimentação", "16 de Março", "R$ 68,90", false, Icons.Default.Fastfood),
-        MockTransaction(5, "Freela de App", "Renda", "15 de Março", "R$ 2.500,00", true, Icons.Default.Work)
-    )
+fun HomeScreen(
+    uiState: HomeUiState,
+    onAddClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
 
     Scaffold(
         modifier = modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background,
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { /* TODO: Navegar para tela de adicionar transação */ },
+                onClick = { onAddClick() },
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
                 shape = CircleShape,
@@ -62,18 +66,15 @@ fun HomeScreen(modifier: Modifier = Modifier) {
         }
     ) { paddingValues ->
 
-        // LazyColumn é a melhor prática para listas de dados.
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(paddingValues),
-            contentPadding = PaddingValues(bottom = 80.dp) // Espaço extra para não sobrepor o FAB no final da lista
+            contentPadding = PaddingValues(bottom = 80.dp)
         ) {
 
-            // Header e Balance Card
             item {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    // Saudação simples
                     Text(
                         text = "Olá, Iago",
                         style = MaterialTheme.typography.titleLarge,
@@ -88,16 +89,14 @@ fun HomeScreen(modifier: Modifier = Modifier) {
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Nosso Componente de Saldo
                     BalanceCard(
-                        balance = "R$ 13.995,60",
-                        income = "R$ 14.500,00",
-                        expense = "R$ 554,40"
+                        balance = uiState.balance.toBRL(),
+                        income = uiState.income.toBRL(),
+                        expense = uiState.expense.toBRL()
                     )
 
                     Spacer(modifier = Modifier.height(32.dp))
 
-                    // Título da Seção de Transações
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -117,19 +116,17 @@ fun HomeScreen(modifier: Modifier = Modifier) {
                     Spacer(modifier = Modifier.height(8.dp))
                 }
             }
-
-            // Lista de Transações Recentes usando o TransactionCard da Fase 1
             items(
-                items = recentTransactions,
-                key = { it.id } // Usar key otimiza as animações e performance da LazyColumn
+                uiState.recentTransactions,
+                key = { it.id }
             ) { transaction ->
                 TransactionCard(
                     title = transaction.title,
                     category = transaction.category,
-                    date = transaction.date,
-                    amount = transaction.amount,
-                    isIncome = transaction.isIncome,
-                    icon = transaction.icon,
+                    date = "Hoje",
+                    amount = transaction.amount.toBRL(),
+                    isIncome = transaction.type == TransactionType.INCOME,
+                    icon = Icons.Default.ShoppingCart,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)
                 )
             }
