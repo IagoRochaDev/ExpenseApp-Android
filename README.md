@@ -17,9 +17,10 @@
 ### 📱 Screenshots & Demo
 
 <div align="center">
-  <img src="https://via.placeholder.com/250x500?text=Dashboard" width="250"/>
-  <img src="https://via.placeholder.com/250x500?text=Transactions" width="250"/>
-  <img src="https://via.placeholder.com/250x500?text=Statistics" width="250"/>
+  <img src="assents/Home(dark).png" width="180"/>
+  <img src="assents/Estatística(dark).png" width="180"/>
+  <img src="assents/Histórico%20(dark).png" width="180"/>
+  <img src="assents/Nova-transacao-despesa(Dark).png" width="180"/>
 </div>
 
 ### ✨ Key Features (Highlights)
