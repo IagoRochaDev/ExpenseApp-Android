@@ -29,6 +29,7 @@ More than just a finance tracker, this project focuses on technical excellence a
 - **Custom Canvas Graphics:** A high-performance **Donut Chart** built from scratch using the Compose Canvas API (`drawArc`), avoiding heavy third-party libraries and demonstrating mathematical logic in UI.
 - **Reactive Single Source of Truth:** The UI observes a `Flow` from the Room Database. Any change in the data layer is instantly reflected across all screens (Home, History, Statistics) without manual refreshes.
 - **Clean Architecture:** Strict separation into **Domain**, **Data**, and **Presentation** layers. The business logic is pure Kotlin, making it independent of the Android framework and highly testable.
+- **Testing & Reliability:** Robust unit testing suite implemented for **DAOs** and **Repositories** using **MockK**, **Robolectric**, and **JUnit 4**, ensuring data integrity and logic correctness.
 - **Modern UI/UX:** Built entirely with **Material Design 3**, featuring dynamic theming (Dark/Light Mode), intuitive navigation, and smooth animations.
 
 ### 🛠️ Tech Stack & Architecture
@@ -38,6 +39,7 @@ More than just a finance tracker, this project focuses on technical excellence a
 - **Dependency Injection:** Dagger Hilt.
 - **Local Storage:** Room Database.
 - **Concurrency & Reactive:** Kotlin Coroutines & StateFlow/Flow.
+- **Testing:** MockK, Robolectric, JUnit 4, Coroutines Test.
 
 ### ⚙️ How to run the project
 
@@ -51,9 +53,10 @@ More than just a finance tracker, this project focuses on technical excellence a
 
 ### 🚀 Roadmap (Next Steps)
 
-- [ ] **Unit Testing:** Implement tests for ViewModels and Repositories using MockK and JUnit 5.
+- [x] **Unit Testing:** Robust suite for DAOs and Repositories using MockK and Robolectric.
+- [x] **CI/CD:** GitHub Actions configured for automated builds and testing on every Push/PR.
 - [ ] **Data Export:** Add functionality to export transactions to CSV/PDF.
-- [ ] **CI/CD:** Configure GitHub Actions for automated builds and testing.
+- [ ] **Unit Testing (UI):** Add Jetpack Compose UI tests.
 
 ---
 
@@ -68,6 +71,7 @@ Mais do que um simples rastreador de despesas, este projeto foca em excelência 
 - **Gráficos Customizados (Canvas):** Um **Donut Chart** de alto desempenho construído do zero usando a API de Canvas do Compose (`drawArc`), evitando bibliotecas externas pesadas e demonstrando lógica matemática na UI.
 - **Fonte de Dados Reativa:** A interface observa um `Flow` do banco de dados Room. Qualquer alteração na camada de dados é refletida instantaneamente em todas as telas (Home, Histórico, Estatísticas).
 - **Arquitetura Limpa:** Separação rigorosa entre as camadas de **Domínio**, **Dados** e **Apresentação**. A lógica de negócio é Kotlin puro, tornando-a independente do framework Android e altamente testável.
+- **Testes e Confiabilidade:** Suíte de testes unitários implementada para **DAOs** e **Repositórios** utilizando **MockK**, **Robolectric** e **JUnit 4**, garantindo a integridade dos dados.
 - **UI/UX Moderna:** Construído inteiramente com **Material Design 3**, apresentando suporte a temas dinâmicos (Modo Escuro/Claro), navegação intuitiva e animações suaves.
 
 ### 🛠️ Stack Tecnológico e Arquitetura
@@ -77,6 +81,7 @@ Mais do que um simples rastreador de despesas, este projeto foca em excelência 
 - **Injeção de Dependência:** Dagger Hilt.
 - **Armazenamento Local:** Room Database.
 - **Assincronismo & Reatividade:** Kotlin Coroutines & Flow.
+- **Testes:** MockK, Robolectric, JUnit 4, Coroutines Test.
 
 ### ⚙️ Como executar o projeto
 
@@ -90,9 +95,10 @@ Mais do que um simples rastreador de despesas, este projeto foca em excelência 
 
 ### 🚀 Próximos Passos (Roadmap)
 
-- [ ] **Testes Unitários:** Implementar testes para ViewModels e Repositórios.
+- [x] **Testes Unitários:** Suíte robusta para DAOs e Repositórios usando MockK e Robolectric.
+- [x] **CI/CD:** Configurado GitHub Actions para automação de testes e builds em cada Push/PR.
 - [ ] **Exportação de Dados:** Adicionar funcionalidade para exportar transações para CSV/PDF.
-- [ ] **CI/CD:** Configurar GitHub Actions para automação de testes e builds.
+- [ ] **Testes de UI:** Adicionar testes de interface com Jetpack Compose Testing.
 
 ---
 
