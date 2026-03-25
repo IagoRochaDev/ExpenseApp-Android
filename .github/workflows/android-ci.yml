@@ -57,6 +57,9 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
+      - name: Dar permissão de execução ao Gradle
+        run: chmod +x gradlew
+
       - name: Build do APK de Release
         run: ./gradlew assembleRelease
 
