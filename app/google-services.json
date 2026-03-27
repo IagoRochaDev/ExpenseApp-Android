@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "936481238482",
+    "project_id": "expenseapp-z43",
+    "storage_bucket": "expenseapp-z43.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:936481238482:android:0a598f4f5c692c540cac0b",
+        "android_client_info": {
+          "package_name": "com.devrochaiago.expenseapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyClILehDve4xF8gYPYqnnOLooVnolBc9gU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
