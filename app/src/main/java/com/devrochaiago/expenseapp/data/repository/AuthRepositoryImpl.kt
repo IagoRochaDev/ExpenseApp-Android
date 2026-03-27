@@ -13,7 +13,6 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun login(email: String, password: String): Result<User> {
         return try {
-            // O .await() é a mágica do Kotlin que espera o Firebase sem travar a tela!
             val result = firebaseAuth.signInWithEmailAndPassword(email, password).await()
             val user = result.user
             if (user != null && user.email != null) {
@@ -42,10 +41,10 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun loginWithGoogle(idToken: String): Result<User> {
         return try {
-            // 1. Cria a credencial do Firebase usando o Token que o Google nos deu
+
             val credential = GoogleAuthProvider.getCredential(idToken, null)
 
-            // 2. Faz o login no Firebase com essa credencial
+
             val result = firebaseAuth.signInWithCredential(credential).await()
             val user = result.user
 
