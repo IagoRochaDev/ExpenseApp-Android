@@ -1,6 +1,5 @@
 package com.devrochaiago.expenseapp.ui.feature.home
 
-import android.content.res.Configuration
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -225,7 +224,6 @@ fun HomeScreen(
 
 @Preview(
     name = "Dark Mode",
-    uiMode = Configuration.UI_MODE_NIGHT_YES,
     showBackground = true
 )
 @Composable
