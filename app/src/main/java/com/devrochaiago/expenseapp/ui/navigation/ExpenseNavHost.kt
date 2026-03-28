@@ -16,11 +16,12 @@ import com.devrochaiago.expenseapp.ui.feature.transactions.TransactionsRoute
 @Composable
 fun ExpenseNavHost(
     modifier: Modifier = Modifier,
-    navController: NavHostController = rememberNavController()
+    navController: NavHostController = rememberNavController(),
+    startDestination: String = "login"
 ) {
     NavHost(
         navController = navController,
-        startDestination = "login",
+        startDestination = startDestination,
         modifier = modifier
     ) {
         composable("login") {
