@@ -12,7 +12,20 @@
           "package_name": "com.devrochaiago.expenseapp"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "936481238482-lum2t2rc31b3vdnkroooso82tmg2qa2s.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.devrochaiago.expenseapp",
+            "certificate_hash": "d1f6360016f7fcf4168608a13097cd8d879805be"
+          }
+        },
+        {
+          "client_id": "936481238482-i9th57q3nd4ds1i5vgr90bbj71hbv0np.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyClILehDve4xF8gYPYqnnOLooVnolBc9gU"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "936481238482-i9th57q3nd4ds1i5vgr90bbj71hbv0np.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
