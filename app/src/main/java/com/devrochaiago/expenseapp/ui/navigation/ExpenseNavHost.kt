@@ -59,6 +59,11 @@ fun ExpenseNavHost(
                 },
                 onNavigateToStatistics = {
                     navController.navigate("statistics")
+                },
+                onNavigateToLogin = {
+                    navController.navigate("login") {
+                        popUpTo(0) { inclusive = true }
+                    }
                 }
             )
         }
