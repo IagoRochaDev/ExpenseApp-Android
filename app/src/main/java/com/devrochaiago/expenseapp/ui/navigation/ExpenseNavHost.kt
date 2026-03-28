@@ -6,6 +6,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.devrochaiago.expenseapp.ui.feature.auth.LoginRoute
 import com.devrochaiago.expenseapp.ui.feature.addtransaction.AddTransactionRoute
 import com.devrochaiago.expenseapp.ui.feature.home.HomeRoute
 import com.devrochaiago.expenseapp.ui.feature.statistics.StatisticsRoute
@@ -18,9 +19,25 @@ fun ExpenseNavHost(
 ) {
     NavHost(
         navController = navController,
-        startDestination = "home",
+        startDestination = "login",
         modifier = modifier
     ) {
+        composable("login") {
+            LoginRoute(
+                onLoginSuccess = {
+                    navController.navigate("home") {
+                        popUpTo("login") { inclusive = true }
+                    }
+                },
+                onNavigateToRegister = {
+                    navController.navigate("register")
+                }
+            )
+    }
+
+        composable("register") {
+            // TODO
+        }
         composable("home") {
             HomeRoute(
                 onNavigateToAddTransaction = {
