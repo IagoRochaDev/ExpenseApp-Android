@@ -12,7 +12,6 @@ import com.devrochaiago.expenseapp.domain.model.UserSummary
 import com.devrochaiago.expenseapp.domain.repository.AuthRepository
 import com.devrochaiago.expenseapp.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
@@ -56,15 +55,12 @@ class TransactionRepositoryImpl @Inject constructor(
     override suspend fun insertTransaction(transaction: Transaction) {
         val userId = currentUserId
 
-        // 1. Salva a transação localmente
         val entity = transaction.toEntity(userId = userId, isSynced = false)
         transactionDao.insertTransaction(entity)
 
-        // 2. Calcula a mudança para os metadados (Se for receita, mexe no income; se for despesa, mexe no expense)
         val incomeChange = if (transaction.type == TransactionType.INCOME) transaction.amount else 0.0
         val expenseChange = if (transaction.type == TransactionType.EXPENSE) transaction.amount else 0.0
 
-        // 3. Atualiza os Metadados Locais (Room)
         val currentSummary = summaryDao.getUserSummary(userId) ?: UserSummaryEntity(userId = userId)
         val updatedSummary = currentSummary.copy(
             totalIncome = currentSummary.totalIncome + incomeChange,
@@ -73,18 +69,13 @@ class TransactionRepositoryImpl @Inject constructor(
         )
         summaryDao.insertOrUpdateSummary(updatedSummary)
 
-        // 4. Tenta enviar para o Firestore (Transação + Metadados)
         try {
-            // Salva a transação na nuvem
             remoteDataSource.insertTransaction(entity.toDto())
 
-            // Incrementa o saldo na nuvem magicamente
             remoteDataSource.updateUserSummary(userId, incomeChange, expenseChange)
 
-            // Marca a transação como sincronizada no Room
             transactionDao.insertTransaction(entity.copy(isSynced = true))
         } catch (e: Exception) {
-            // Sem internet? Tudo bem, o saldo e a transação já estão no Room!
             e.printStackTrace()
         }
     }
@@ -96,6 +87,42 @@ class TransactionRepositoryImpl @Inject constructor(
 
         try {
             remoteDataSource.deleteTransaction(userId, transaction.id)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    override suspend fun syncTransactions() {
+        val userId = currentUserId
+
+        val unsyncedTransactions = transactionDao.getUnsyncedTransactions(userId)
+
+        for (entity in unsyncedTransactions) {
+            try {
+                remoteDataSource.insertTransaction(entity.toDto())
+
+                val incomeChange = if (entity.type == TransactionType.INCOME.name) entity.amount else 0.0
+                val expenseChange = if (entity.type == TransactionType.EXPENSE.name) entity.amount else 0.0
+                remoteDataSource.updateUserSummary(userId, incomeChange, expenseChange)
+
+                transactionDao.insertTransaction(entity.copy(isSynced = true))
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
+        try {
+            val remoteSummary = remoteDataSource.getUserSummary(userId)
+
+            if (remoteSummary != null) {
+                val updatedEntity = UserSummaryEntity(
+                    userId = userId,
+                    totalIncome = remoteSummary.totalIncome,
+                    totalExpense = remoteSummary.totalExpense,
+                    lastUpdated = System.currentTimeMillis()
+                )
+                summaryDao.insertOrUpdateSummary(updatedEntity)
+            }
         } catch (e: Exception) {
             e.printStackTrace()
         }

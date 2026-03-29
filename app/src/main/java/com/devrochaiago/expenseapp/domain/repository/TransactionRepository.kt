@@ -16,5 +16,5 @@ interface TransactionRepository {
     fun getUserSummary(): Flow<UserSummary>
     suspend fun insertTransaction(transaction: Transaction)
     suspend fun deleteTransaction(transaction: Transaction)
-
+    suspend fun syncTransactions()
 }
