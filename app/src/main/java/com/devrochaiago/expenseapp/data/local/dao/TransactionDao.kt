@@ -18,17 +18,19 @@ interface TransactionDao {
     @Delete
     suspend fun deleteTransaction(transaction: TransactionEntity)
 
-    @Query("SELECT * FROM transactions ORDER BY dateMillis DESC")
-    fun getAllTransactions(): Flow<List<TransactionEntity>>
+    @Query("SELECT * FROM transactions WHERE userId = :userId ORDER BY dateMillis DESC")
+    fun getAllTransactions(userId: String): Flow<List<TransactionEntity>>
 
     @Query("""
         SELECT SUM(amount) 
         FROM transactions 
         WHERE type = :transactionType 
+        AND userId = :userId
         AND dateMillis BETWEEN :startDateMillis AND :endDateMillis
     """)
     fun getTotalAmountByTypeAndDate(
         transactionType: String,
+        userId: String,
         startDateMillis: Long,
         endDateMillis: Long
     ): Flow<Double?>
