@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.room.Room
 import com.devrochaiago.expenseapp.data.local.ExpenseDatabase
 import com.devrochaiago.expenseapp.data.local.dao.TransactionDao
+import com.devrochaiago.expenseapp.data.local.dao.UserSummaryDao
 import com.devrochaiago.expenseapp.data.remote.TransactionRemoteDataSource
 import com.devrochaiago.expenseapp.data.remote.TransactionRemoteDataSourceImpl
 import com.devrochaiago.expenseapp.data.repository.TransactionRepositoryImpl
@@ -40,12 +41,19 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideUserSummaryDao(db: ExpenseDatabase): UserSummaryDao {
+        return db.userSummaryDao()
+    }
+
+    @Provides
+    @Singleton
     fun provideTransactionRepository(
-        dao: TransactionDao,
+        transactionDao: TransactionDao,
+        summaryDao: UserSummaryDao,
         remoteDataSource: TransactionRemoteDataSource,
         authRepository: AuthRepository
     ): TransactionRepository {
-        return TransactionRepositoryImpl(dao, remoteDataSource, authRepository)
+        return TransactionRepositoryImpl(transactionDao, summaryDao, remoteDataSource, authRepository)
     }
 
     @Provides

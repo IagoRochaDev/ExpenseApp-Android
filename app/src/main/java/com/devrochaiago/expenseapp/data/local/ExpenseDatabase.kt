@@ -5,9 +5,10 @@ import androidx.room.RoomDatabase
 import com.devrochaiago.expenseapp.data.local.dao.TransactionDao
 import com.devrochaiago.expenseapp.data.local.dao.UserSummaryDao
 import com.devrochaiago.expenseapp.data.local.entity.TransactionEntity
+import com.devrochaiago.expenseapp.data.local.entity.UserSummaryEntity
 
 @Database(
-    entities = [TransactionEntity::class],
+    entities = [TransactionEntity::class, UserSummaryEntity::class],
     version = 1,
     exportSchema = false
 )
