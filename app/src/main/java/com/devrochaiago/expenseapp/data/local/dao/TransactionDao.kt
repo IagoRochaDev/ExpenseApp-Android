@@ -34,4 +34,7 @@ interface TransactionDao {
         startDateMillis: Long,
         endDateMillis: Long
     ): Flow<Double?>
+
+    @Query("SELECT * FROM transactions WHERE userId = :userId AND isSynced = 0")
+    suspend fun getUnsyncedTransactions(userId: String): List<TransactionEntity>
 }
