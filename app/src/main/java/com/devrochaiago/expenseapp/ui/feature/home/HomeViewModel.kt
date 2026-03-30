@@ -7,6 +7,7 @@ import com.devrochaiago.expenseapp.domain.model.TransactionType
 import com.devrochaiago.expenseapp.domain.repository.TransactionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class HomeUiState(
@@ -23,6 +24,11 @@ class HomeViewModel @Inject constructor(
     private val repository: TransactionRepository
 ) : ViewModel() {
 
+    init {
+        viewModelScope.launch {
+            repository.syncTransactions()
+        }
+    }
 
     private val _showLogoutDialog = MutableStateFlow(false)
 
