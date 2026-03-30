@@ -1,9 +1,14 @@
 package com.devrochaiago.expenseapp.data.repository
 
 import com.devrochaiago.expenseapp.data.local.dao.TransactionDao
+import com.devrochaiago.expenseapp.data.local.dao.UserSummaryDao
 import com.devrochaiago.expenseapp.data.local.entity.TransactionEntity
+import com.devrochaiago.expenseapp.data.local.entity.UserSummaryEntity
+import com.devrochaiago.expenseapp.data.remote.TransactionRemoteDataSource
 import com.devrochaiago.expenseapp.domain.model.Transaction
 import com.devrochaiago.expenseapp.domain.model.TransactionType
+import com.devrochaiago.expenseapp.domain.model.User
+import com.devrochaiago.expenseapp.domain.repository.AuthRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -18,21 +23,32 @@ import org.junit.Test
 class TransactionRepositoryImplTest {
 
     private lateinit var repository: TransactionRepositoryImpl
-    private val dao: TransactionDao = mockk()
+    private val transactionDao: TransactionDao = mockk()
+    private val summaryDao: UserSummaryDao = mockk()
+    private val remoteDataSource: TransactionRemoteDataSource = mockk()
+    private val authRepository: AuthRepository = mockk()
+
+    private val testUserId = "test_user_id"
+    private val testUser = User(testUserId, "test@email.com")
 
     @Before
     fun setup() {
-        repository = TransactionRepositoryImpl(dao)
+        every { authRepository.getCurrentUser() } returns testUser
+        repository = TransactionRepositoryImpl(
+            transactionDao,
+            summaryDao,
+            remoteDataSource,
+            authRepository
+        )
     }
 
     @Test
-    fun `getAllTransactions should map entities to domain models`() = runTest {
-
+    fun `getAllTransactions should map entities to domain models using current user id`() = runTest {
         val entities = listOf(
-            TransactionEntity(1, "Title 1", 10.0, "Cat 1", "EXPENSE", 1000L),
-            TransactionEntity(2, "Title 2", 20.0, "Cat 2", "INCOME", 2000L)
+            TransactionEntity("1", "Title 1", 10.0, "Cat 1", "EXPENSE", 1000L, testUserId),
+            TransactionEntity("2", "Title 2", 20.0, "Cat 2", "INCOME", 2000L, testUserId)
         )
-        every { dao.getAllTransactions() } returns flowOf(entities)
+        every { transactionDao.getAllTransactions(testUserId) } returns flowOf(entities)
 
         val result = repository.getAllTransactions().first()
 
@@ -43,38 +59,44 @@ class TransactionRepositoryImplTest {
     }
 
     @Test
-    fun `insertTransaction should call dao with entity`() = runTest {
+    fun `insertTransaction should call dao, summary dao and remote data source`() = runTest {
+        val transaction = Transaction("1", "Title", 10.0, "Cat", TransactionType.EXPENSE, 1000L)
+        val expectedEntity = TransactionEntity("1", "Title", 10.0, "Cat", "EXPENSE", 1000L, testUserId, false)
 
-        val transaction = Transaction(1, "Title", 10.0, "Cat", TransactionType.EXPENSE, 1000L)
-        val expectedEntity = TransactionEntity(1, "Title", 10.0, "Cat", "EXPENSE", 1000L)
-        coEvery { dao.insertTransaction(any()) } returns Unit
-
+        coEvery { transactionDao.insertTransaction(any()) } returns Unit
+        coEvery { summaryDao.getUserSummary(testUserId) } returns null
+        coEvery { summaryDao.insertOrUpdateSummary(any()) } returns Unit
+        coEvery { remoteDataSource.insertTransaction(any()) } returns Unit
+        coEvery { remoteDataSource.updateUserSummary(any(), any(), any()) } returns Unit
 
         repository.insertTransaction(transaction)
 
-
-        coVerify { dao.insertTransaction(expectedEntity) }
+        coVerify { transactionDao.insertTransaction(expectedEntity) }
+        coVerify { summaryDao.insertOrUpdateSummary(match {
+            it.userId == testUserId && it.totalExpense == 10.0
+        }) }
     }
 
     @Test
-    fun `deleteTransaction should call dao with entity`() = runTest {
+    fun `deleteTransaction should call dao and remote data source`() = runTest {
+        val transaction = Transaction("1", "Title", 10.0, "Cat", TransactionType.EXPENSE, 1000L)
+        val expectedEntity = TransactionEntity("1", "Title", 10.0, "Cat", "EXPENSE", 1000L, testUserId, true)
 
-        val transaction = Transaction(1, "Title", 10.0, "Cat", TransactionType.EXPENSE, 1000L)
-        val expectedEntity = TransactionEntity(1, "Title", 10.0, "Cat", "EXPENSE", 1000L)
-        coEvery { dao.deleteTransaction(any()) } returns Unit
+        coEvery { transactionDao.deleteTransaction(any()) } returns Unit
+        coEvery { remoteDataSource.deleteTransaction(testUserId, "1") } returns Unit
 
         repository.deleteTransaction(transaction)
 
-        coVerify { dao.deleteTransaction(expectedEntity) }
+        coVerify { transactionDao.deleteTransaction(expectedEntity) }
+        coVerify { remoteDataSource.deleteTransaction(testUserId, "1") }
     }
 
     @Test
-    fun `getTotalAmountByTypeAndDate should return value from dao or zero if null`() = runTest {
-
+    fun `getTotalAmountByTypeAndDate should return value from dao with user id`() = runTest {
         val type = TransactionType.EXPENSE
         val start = 0L
         val end = 100L
-        every { dao.getTotalAmountByTypeAndDate("EXPENSE", start, end) } returns flowOf(50.0)
+        every { transactionDao.getTotalAmountByTypeAndDate(testUserId, "EXPENSE", start, end) } returns flowOf(50.0)
 
         val result = repository.getTotalAmountByTypeAndDate(type, start, end).first()
 
