@@ -14,6 +14,9 @@ import com.devrochaiago.expenseapp.domain.repository.TransactionRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class TransactionRepositoryImpl @Inject constructor(
     private val transactionDao: TransactionDao,
@@ -68,15 +71,16 @@ class TransactionRepositoryImpl @Inject constructor(
             lastUpdated = System.currentTimeMillis()
         )
         summaryDao.insertOrUpdateSummary(updatedSummary)
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                remoteDataSource.insertTransaction(entity.toDto())
 
-        try {
-            remoteDataSource.insertTransaction(entity.toDto())
+                remoteDataSource.updateUserSummary(userId, incomeChange, expenseChange)
 
-            remoteDataSource.updateUserSummary(userId, incomeChange, expenseChange)
-
-            transactionDao.insertTransaction(entity.copy(isSynced = true))
-        } catch (e: Exception) {
-            e.printStackTrace()
+                transactionDao.insertTransaction(entity.copy(isSynced = true))
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 

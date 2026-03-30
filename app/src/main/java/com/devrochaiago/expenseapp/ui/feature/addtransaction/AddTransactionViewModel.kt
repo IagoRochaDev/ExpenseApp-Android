@@ -18,7 +18,8 @@ data class AddTransactionUiState(
     val amount: String = "",
     val category: String = "Alimentação",
     val isExpense: Boolean = true,
-    val dateMillis: Long = System.currentTimeMillis()
+    val dateMillis: Long = System.currentTimeMillis(),
+    val isLoading: Boolean = false
 )
 
 @HiltViewModel
@@ -54,11 +55,14 @@ class AddTransactionViewModel @Inject constructor(
     fun saveTransaction(onSuccess: () -> Unit) {
         val currentState = _uiState.value
 
+        if (currentState.isLoading) return
+
         val amountDouble = currentState.amount.replace(",", ".").toDoubleOrNull() ?: 0.0
 
         if (currentState.title.isBlank() || amountDouble <= 0.0) {
             return
         }
+        _uiState.value = currentState.copy(isLoading = true)
 
         val transaction = Transaction(
             title = currentState.title,
@@ -70,6 +74,7 @@ class AddTransactionViewModel @Inject constructor(
 
         viewModelScope.launch {
             repository.insertTransaction(transaction)
+            _uiState.value = _uiState.value.copy(isLoading = false)
             onSuccess()
         }
     }
