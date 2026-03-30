@@ -130,6 +130,25 @@ class TransactionRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             e.printStackTrace()
         }
+        try {
+            val remoteTransactions = remoteDataSource.getAllTransactions(userId, null)
+
+            for (dto in remoteTransactions) {
+                val entity = TransactionEntity(
+                    id = dto.id,
+                    title = dto.title,
+                    amount = dto.amount,
+                    category = dto.category,
+                    type = dto.type,
+                    dateMillis = dto.dateMillis,
+                    userId = userId,
+                    isSynced = true
+                )
+                transactionDao.insertTransaction(entity)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
 }
 
