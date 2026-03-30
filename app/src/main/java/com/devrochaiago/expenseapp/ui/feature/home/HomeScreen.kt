@@ -21,6 +21,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.devrochaiago.expenseapp.core.utils.getCategoryIcon
+import com.devrochaiago.expenseapp.core.utils.getGreeting
 import com.devrochaiago.expenseapp.core.utils.toBRL
 import com.devrochaiago.expenseapp.core.utils.toRelativeDateString
 import com.devrochaiago.expenseapp.domain.model.TransactionType
@@ -100,12 +101,12 @@ fun HomeScreen(
                         ) {
                             Column {
                                 Text(
-                                    text = "Olá, Iago",
+                                    text = getGreeting(),
                                     style = MaterialTheme.typography.titleLarge,
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    text = "Bem-vindo de volta!",
+                                    text = "Visão geral das suas finanças",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
