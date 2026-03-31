@@ -18,6 +18,10 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import javax.inject.Qualifier
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -51,9 +55,16 @@ object AppModule {
         transactionDao: TransactionDao,
         summaryDao: UserSummaryDao,
         remoteDataSource: TransactionRemoteDataSource,
-        authRepository: AuthRepository
+        authRepository: AuthRepository,
+        @ApplicationScope externalScope: CoroutineScope
     ): TransactionRepository {
-        return TransactionRepositoryImpl(transactionDao, summaryDao, remoteDataSource, authRepository)
+        return TransactionRepositoryImpl(
+            transactionDao,
+            summaryDao,
+            remoteDataSource,
+            authRepository,
+            externalScope
+        )
     }
 
     @Provides
@@ -68,5 +79,20 @@ object AppModule {
         firestore: FirebaseFirestore
     ): TransactionRemoteDataSource {
         return TransactionRemoteDataSourceImpl(firestore)
+    }
+
+    @Retention(AnnotationRetention.RUNTIME)
+    @Qualifier
+    annotation class ApplicationScope
+
+    @Module
+    @InstallIn(SingletonComponent::class)
+    object CoroutinesModule {
+        @Provides
+        @Singleton
+        @ApplicationScope
+        fun providesApplicationScope(): CoroutineScope {
+            return CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        }
     }
 }
