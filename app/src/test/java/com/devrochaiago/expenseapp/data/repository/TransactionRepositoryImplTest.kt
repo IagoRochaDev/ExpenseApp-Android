@@ -3,7 +3,6 @@ package com.devrochaiago.expenseapp.data.repository
 import com.devrochaiago.expenseapp.data.local.dao.TransactionDao
 import com.devrochaiago.expenseapp.data.local.dao.UserSummaryDao
 import com.devrochaiago.expenseapp.data.local.entity.TransactionEntity
-import com.devrochaiago.expenseapp.data.local.entity.UserSummaryEntity
 import com.devrochaiago.expenseapp.data.remote.TransactionRemoteDataSource
 import com.devrochaiago.expenseapp.domain.model.Transaction
 import com.devrochaiago.expenseapp.domain.model.TransactionType
@@ -13,13 +12,17 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class TransactionRepositoryImplTest {
 
     private lateinit var repository: TransactionRepositoryImpl
@@ -27,6 +30,7 @@ class TransactionRepositoryImplTest {
     private val summaryDao: UserSummaryDao = mockk()
     private val remoteDataSource: TransactionRemoteDataSource = mockk()
     private val authRepository: AuthRepository = mockk()
+    private val testScope = TestScope()
 
     private val testUserId = "test_user_id"
     private val testUser = User(testUserId, "test@email.com")
@@ -38,7 +42,8 @@ class TransactionRepositoryImplTest {
             transactionDao,
             summaryDao,
             remoteDataSource,
-            authRepository
+            authRepository,
+            testScope
         )
     }
 
@@ -70,11 +75,15 @@ class TransactionRepositoryImplTest {
         coEvery { remoteDataSource.updateUserSummary(any(), any(), any()) } returns Unit
 
         repository.insertTransaction(transaction)
+        testScope.advanceUntilIdle()
 
         coVerify { transactionDao.insertTransaction(expectedEntity) }
         coVerify { summaryDao.insertOrUpdateSummary(match {
             it.userId == testUserId && it.totalExpense == 10.0
         }) }
+        coVerify { remoteDataSource.insertTransaction(any()) }
+        // Verify that it updates local synced status
+        coVerify { transactionDao.insertTransaction(match { it.id == "1" && it.isSynced }) }
     }
 
     @Test
@@ -86,6 +95,7 @@ class TransactionRepositoryImplTest {
         coEvery { remoteDataSource.deleteTransaction(testUserId, "1") } returns Unit
 
         repository.deleteTransaction(transaction)
+        testScope.advanceUntilIdle()
 
         coVerify { transactionDao.deleteTransaction(expectedEntity) }
         coVerify { remoteDataSource.deleteTransaction(testUserId, "1") }
@@ -96,10 +106,29 @@ class TransactionRepositoryImplTest {
         val type = TransactionType.EXPENSE
         val start = 0L
         val end = 100L
-        every { transactionDao.getTotalAmountByTypeAndDate(testUserId, "EXPENSE", start, end) } returns flowOf(50.0)
+        every { transactionDao.getTotalAmountByTypeAndDate("EXPENSE", testUserId, start, end) } returns flowOf(50.0)
 
         val result = repository.getTotalAmountByTypeAndDate(type, start, end).first()
 
         assertEquals(50.0, result, 0.0)
+    }
+
+    @Test
+    fun `syncTransactions should process unsynced transactions`() = runTest {
+        val unsynced = listOf(
+            TransactionEntity("1", "T1", 10.0, "C", "EXPENSE", 1000L, testUserId, false)
+        )
+        coEvery { transactionDao.getUnsyncedTransactions(testUserId) } returns unsynced
+        coEvery { remoteDataSource.insertTransaction(any()) } returns Unit
+        coEvery { remoteDataSource.updateUserSummary(any(), any(), any()) } returns Unit
+        coEvery { transactionDao.insertTransaction(any()) } returns Unit
+        coEvery { remoteDataSource.getUserSummary(testUserId) } returns null
+        coEvery { remoteDataSource.getAllTransactions(testUserId, null) } returns emptyList()
+
+        repository.syncTransactions()
+        testScope.advanceUntilIdle()
+
+        coVerify { remoteDataSource.insertTransaction(any()) }
+        coVerify { transactionDao.insertTransaction(match { it.id == "1" && it.isSynced }) }
     }
 }
