@@ -6,6 +6,7 @@ import com.devrochaiago.expenseapp.data.local.entity.TransactionEntity
 import com.devrochaiago.expenseapp.data.local.entity.UserSummaryEntity
 import com.devrochaiago.expenseapp.data.remote.TransactionDto
 import com.devrochaiago.expenseapp.data.remote.TransactionRemoteDataSource
+import com.devrochaiago.expenseapp.di.AppModule.ApplicationScope
 import com.devrochaiago.expenseapp.domain.model.Transaction
 import com.devrochaiago.expenseapp.domain.model.TransactionType
 import com.devrochaiago.expenseapp.domain.model.UserSummary
@@ -17,12 +18,14 @@ import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class TransactionRepositoryImpl @Inject constructor(
     private val transactionDao: TransactionDao,
     private val summaryDao: UserSummaryDao,
     private val remoteDataSource: TransactionRemoteDataSource,
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    @ApplicationScope private val externalScope: CoroutineScope
 ) : TransactionRepository {
 
     private val currentUserId: String
@@ -40,13 +43,13 @@ class TransactionRepositoryImpl @Inject constructor(
         startDateMillis: Long,
         endDateMillis: Long
     ): Flow<Double> {
-        return transactionDao.getTotalAmountByTypeAndDate(currentUserId, type.name, startDateMillis, endDateMillis)
+        return transactionDao.getTotalAmountByTypeAndDate(type.name, currentUserId, startDateMillis, endDateMillis)
             .map { it ?: 0.0 }
     }
 
     override fun getUserSummary(): Flow<UserSummary> {
+
         return summaryDao.getUserSummaryFlow(currentUserId).map { entity ->
-            // Se não tiver nada no Room ainda, retorna zerado
             if (entity == null) {
                 UserSummary(0.0, 0.0)
             } else {
@@ -56,98 +59,111 @@ class TransactionRepositoryImpl @Inject constructor(
     }
 
     override suspend fun insertTransaction(transaction: Transaction) {
-        val userId = currentUserId
+        withContext(Dispatchers.IO) {
+            val userId = currentUserId
 
-        val entity = transaction.toEntity(userId = userId, isSynced = false)
-        transactionDao.insertTransaction(entity)
+            val entity = transaction.toEntity(userId = userId, isSynced = false)
+            transactionDao.insertTransaction(entity)
 
-        val incomeChange = if (transaction.type == TransactionType.INCOME) transaction.amount else 0.0
-        val expenseChange = if (transaction.type == TransactionType.EXPENSE) transaction.amount else 0.0
+            val incomeChange =
+                if (transaction.type == TransactionType.INCOME) transaction.amount else 0.0
+            val expenseChange =
+                if (transaction.type == TransactionType.EXPENSE) transaction.amount else 0.0
 
-        val currentSummary = summaryDao.getUserSummary(userId) ?: UserSummaryEntity(userId = userId)
-        val updatedSummary = currentSummary.copy(
-            totalIncome = currentSummary.totalIncome + incomeChange,
-            totalExpense = currentSummary.totalExpense + expenseChange,
-            lastUpdated = System.currentTimeMillis()
-        )
-        summaryDao.insertOrUpdateSummary(updatedSummary)
-        CoroutineScope(Dispatchers.IO).launch {
-            try {
-                remoteDataSource.insertTransaction(entity.toDto())
+            val currentSummary =
+                summaryDao.getUserSummary(userId) ?: UserSummaryEntity(userId = userId)
+            val updatedSummary = currentSummary.copy(
+                totalIncome = currentSummary.totalIncome + incomeChange,
+                totalExpense = currentSummary.totalExpense + expenseChange,
+                lastUpdated = System.currentTimeMillis()
+            )
+            summaryDao.insertOrUpdateSummary(updatedSummary)
+            externalScope.launch {
+                try {
+                    remoteDataSource.insertTransaction(entity.toDto())
 
-                remoteDataSource.updateUserSummary(userId, incomeChange, expenseChange)
+                    remoteDataSource.updateUserSummary(userId, incomeChange, expenseChange)
 
-                transactionDao.insertTransaction(entity.copy(isSynced = true))
-            } catch (e: Exception) {
-                e.printStackTrace()
+                    transactionDao.insertTransaction(entity.copy(isSynced = true))
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
             }
         }
     }
 
     override suspend fun deleteTransaction(transaction: Transaction) {
-        val userId = currentUserId
+        withContext(Dispatchers.IO) {
+            val userId = currentUserId
 
-        transactionDao.deleteTransaction(transaction.toEntity(userId = userId, isSynced = true))
-
-        try {
-            remoteDataSource.deleteTransaction(userId, transaction.id)
-        } catch (e: Exception) {
-            e.printStackTrace()
+            transactionDao.deleteTransaction(transaction.toEntity(userId = userId, isSynced = true))
+            externalScope.launch {
+                try {
+                    remoteDataSource.deleteTransaction(userId, transaction.id)
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
         }
     }
 
     override suspend fun syncTransactions() {
-        val userId = currentUserId
+        withContext(Dispatchers.IO) {
+            val userId = currentUserId
 
-        val unsyncedTransactions = transactionDao.getUnsyncedTransactions(userId)
+            val unsyncedTransactions = transactionDao.getUnsyncedTransactions(userId)
+            externalScope.launch {
+                for (entity in unsyncedTransactions) {
+                    try {
+                        remoteDataSource.insertTransaction(entity.toDto())
 
-        for (entity in unsyncedTransactions) {
-            try {
-                remoteDataSource.insertTransaction(entity.toDto())
+                        val incomeChange =
+                            if (entity.type == TransactionType.INCOME.name) entity.amount else 0.0
+                        val expenseChange =
+                            if (entity.type == TransactionType.EXPENSE.name) entity.amount else 0.0
+                        remoteDataSource.updateUserSummary(userId, incomeChange, expenseChange)
 
-                val incomeChange = if (entity.type == TransactionType.INCOME.name) entity.amount else 0.0
-                val expenseChange = if (entity.type == TransactionType.EXPENSE.name) entity.amount else 0.0
-                remoteDataSource.updateUserSummary(userId, incomeChange, expenseChange)
+                        transactionDao.insertTransaction(entity.copy(isSynced = true))
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
 
-                transactionDao.insertTransaction(entity.copy(isSynced = true))
-            } catch (e: Exception) {
-                e.printStackTrace()
+                try {
+                    val remoteSummary = remoteDataSource.getUserSummary(userId)
+
+                    if (remoteSummary != null) {
+                        val updatedEntity = UserSummaryEntity(
+                            userId = userId,
+                            totalIncome = remoteSummary.totalIncome,
+                            totalExpense = remoteSummary.totalExpense,
+                            lastUpdated = System.currentTimeMillis()
+                        )
+                        summaryDao.insertOrUpdateSummary(updatedEntity)
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+                try {
+                    val remoteTransactions = remoteDataSource.getAllTransactions(userId, null)
+
+                    for (dto in remoteTransactions) {
+                        val entity = TransactionEntity(
+                            id = dto.id,
+                            title = dto.title,
+                            amount = dto.amount,
+                            category = dto.category,
+                            type = dto.type,
+                            dateMillis = dto.dateMillis,
+                            userId = userId,
+                            isSynced = true
+                        )
+                        transactionDao.insertTransaction(entity)
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
             }
-        }
-
-        try {
-            val remoteSummary = remoteDataSource.getUserSummary(userId)
-
-            if (remoteSummary != null) {
-                val updatedEntity = UserSummaryEntity(
-                    userId = userId,
-                    totalIncome = remoteSummary.totalIncome,
-                    totalExpense = remoteSummary.totalExpense,
-                    lastUpdated = System.currentTimeMillis()
-                )
-                summaryDao.insertOrUpdateSummary(updatedEntity)
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-        try {
-            val remoteTransactions = remoteDataSource.getAllTransactions(userId, null)
-
-            for (dto in remoteTransactions) {
-                val entity = TransactionEntity(
-                    id = dto.id,
-                    title = dto.title,
-                    amount = dto.amount,
-                    category = dto.category,
-                    type = dto.type,
-                    dateMillis = dto.dateMillis,
-                    userId = userId,
-                    isSynced = true
-                )
-                transactionDao.insertTransaction(entity)
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
         }
     }
 }
