@@ -19,6 +19,11 @@ data class HomeUiState(
     val isLoading: Boolean = true
 )
 
+sealed class HomeEvent {
+    object ShowLogoutDialog : HomeEvent()
+    object DismissLogoutDialog : HomeEvent()
+}
+
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val repository: TransactionRepository
@@ -61,11 +66,15 @@ class HomeViewModel @Inject constructor(
         initialValue = HomeUiState(isLoading = true)
     )
 
-    fun onShowLogoutDialog() {
-        _showLogoutDialog.value = true
-    }
+    fun onEvent(event: HomeEvent) {
+        when (event) {
+            HomeEvent.ShowLogoutDialog -> {
+                _showLogoutDialog.value = true
+            }
 
-    fun onDismissLogoutDialog() {
-        _showLogoutDialog.value = false
+            HomeEvent.DismissLogoutDialog -> {
+                _showLogoutDialog.value = false
+            }
+        }
     }
 }

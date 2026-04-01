@@ -41,12 +41,11 @@ fun HomeRoute(
 
     HomeScreen(
         uiState = uiState,
+        onEvent = viewModel::onEvent,
         onAddClick = onNavigateToAddTransaction,
         onStatisticsClick = onNavigateToStatistics,
         onTransactionsClick = onNavigateToTransactions,
-        onLogoutClick = onNavigateToLogin,
-        onShowLogoutDialog = viewModel::onShowLogoutDialog,
-        onHideLogoutDialog = viewModel::onDismissLogoutDialog
+        onLogoutClick = onNavigateToLogin
     )
 }
 
@@ -54,12 +53,11 @@ fun HomeRoute(
 @Composable
 fun HomeScreen(
     uiState: HomeUiState,
+    onEvent: (HomeEvent) -> Unit,
     onAddClick: () -> Unit,
     onStatisticsClick: () -> Unit = {},
     onTransactionsClick: () -> Unit = {},
     onLogoutClick: () -> Unit = {},
-    onShowLogoutDialog: () -> Unit,
-    onHideLogoutDialog: () -> Unit,
     modifier: Modifier = Modifier
 ) {
 
@@ -132,7 +130,7 @@ fun HomeScreen(
                                 }
 
                                 OutlinedIconButton(
-                                    onClick = onShowLogoutDialog,
+                                    onClick = { onEvent(HomeEvent.ShowLogoutDialog) },
                                     modifier = Modifier.size(48.dp),
                                     shape = RoundedCornerShape(12.dp),
                                     border = BorderStroke(
@@ -195,7 +193,7 @@ fun HomeScreen(
 
             if (uiState.showLogoutDialog) {
                 AlertDialog(
-                    onDismissRequest = onHideLogoutDialog,
+                    onDismissRequest = { onEvent(HomeEvent.DismissLogoutDialog) },
                     title = {
                         Text("Sair do aplicativo")
                     },
@@ -205,7 +203,7 @@ fun HomeScreen(
                     confirmButton = {
                         TextButton(
                             onClick = {
-                                onHideLogoutDialog()
+                                onEvent(HomeEvent.DismissLogoutDialog)
                                 onLogoutClick()
                             }
                         ) {
@@ -213,7 +211,7 @@ fun HomeScreen(
                         }
                     },
                     dismissButton = {
-                        TextButton(onClick = onHideLogoutDialog) {
+                        TextButton(onClick = { onEvent(HomeEvent.DismissLogoutDialog) }) {
                             Text("Cancelar")
                         }
                     }
@@ -232,11 +230,10 @@ private fun HomeScreenPreview() {
     ExpenseAppTheme {
         HomeScreen(
             uiState = HomeUiState(),
+            onEvent = {},
             onAddClick = {},
             onTransactionsClick = {},
-            onStatisticsClick = {},
-            onShowLogoutDialog = {},
-            onHideLogoutDialog = {}
+            onStatisticsClick = {}
         )
     }
 }
