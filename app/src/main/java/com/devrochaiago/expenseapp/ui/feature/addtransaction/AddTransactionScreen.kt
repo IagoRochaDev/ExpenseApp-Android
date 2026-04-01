@@ -70,14 +70,7 @@ fun AddTransactionRoute(
 
     AddTransactionScreen(
         uiState = uiState,
-        onTitleChange = viewModel::onTitleChange,
-        onAmountChange = viewModel::onAmountChange,
-        onTypeChange = viewModel::onTypeChange,
-        onCategoryChange = viewModel::onCategoryChange,
-        onDateChange = viewModel::onDateChange,
-        onSaveClick = {
-            viewModel.saveTransaction(onSuccess = onNavigateBack)
-        },
+        onEvent = viewModel::onEvent,
         onNavigateBack = onNavigateBack
     )
 }
@@ -86,12 +79,7 @@ fun AddTransactionRoute(
 @Composable
 fun AddTransactionScreen(
     uiState: AddTransactionUiState,
-    onTitleChange: (String) -> Unit,
-    onAmountChange: (String) -> Unit,
-    onTypeChange: (Boolean) -> Unit,
-    onCategoryChange: (String) -> Unit,
-    onDateChange: (Long) -> Unit,
-    onSaveClick: () -> Unit,
+    onEvent: (AddTransactionEvent) -> Unit,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -144,7 +132,7 @@ fun AddTransactionScreen(
 
             TransactionTypeSelector(
                 isExpense = uiState.isExpense,
-                onTypeSelected = onTypeChange
+                onTypeSelected = { onEvent(AddTransactionEvent.OnTypeChange(it)) }
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -156,7 +144,7 @@ fun AddTransactionScreen(
             )
             OutlinedTextField(
                 value = uiState.amount,
-                onValueChange = onAmountChange,
+                onValueChange = { onEvent(AddTransactionEvent.OnAmountChange(it)) },
                 textStyle = MaterialTheme.typography.displayMedium.copy(
                     textAlign = TextAlign.Center,
                     fontWeight = FontWeight.Bold,
@@ -193,7 +181,7 @@ fun AddTransactionScreen(
 
             OutlinedTextField(
                 value = uiState.title,
-                onValueChange = onTitleChange,
+                onValueChange = { onEvent(AddTransactionEvent.OnTitleChange(it)) },
                 label = { Text("Título (Ex: Conta de Luz)") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
@@ -226,7 +214,7 @@ fun AddTransactionScreen(
                         DropdownMenuItem(
                             text = { Text(category) },
                             onClick = {
-                                onCategoryChange(category)
+                                onEvent(AddTransactionEvent.OnCategoryChange(category))
                                 expandedCategory = false
                             }
                         )
@@ -256,7 +244,7 @@ fun AddTransactionScreen(
             Spacer(modifier = Modifier.weight(1f))
 
             Button(
-                onClick = onSaveClick,
+                onClick = { onEvent(AddTransactionEvent.OnSaveClick(onSuccess = onNavigateBack)) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp)
@@ -286,7 +274,7 @@ fun AddTransactionScreen(
                 onDismissRequest = { showDatePicker = false },
                 confirmButton = {
                     TextButton(onClick = {
-                        datePickerState.selectedDateMillis?.let { onDateChange(it) }
+                        datePickerState.selectedDateMillis?.let { onEvent(AddTransactionEvent.OnDateChange(it)) }
                         showDatePicker = false
                     }) {
                         Text("OK")
@@ -359,12 +347,7 @@ private fun AddTransactionScreenPreview() {
     ExpenseAppTheme {
         AddTransactionScreen(
             uiState = AddTransactionUiState(),
-            onTitleChange = {},
-            onAmountChange = {},
-            onTypeChange = {},
-            onCategoryChange = {},
-            onDateChange = {},
-            onSaveClick = {},
+            onEvent = {},
             onNavigateBack = {}
         )
     }
