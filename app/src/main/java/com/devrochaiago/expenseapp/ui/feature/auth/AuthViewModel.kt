@@ -19,6 +19,13 @@ data class AuthUiState(
     val errorMessage: String? = null
 )
 
+sealed class AuthEvent {
+    data class LoginWithEmail(val email: String, val pass: String) : AuthEvent()
+    data class RegisterWithEmail(val email: String, val pass: String) : AuthEvent()
+    data class LoginWithGoogle(val idToken: String) : AuthEvent()
+    object ResetError : AuthEvent()
+}
+
 @HiltViewModel
 class AuthViewModel @Inject constructor(
     private val authRepository: AuthRepository
@@ -27,47 +34,57 @@ class AuthViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(AuthUiState())
     val uiState: StateFlow<AuthUiState> = _uiState.asStateFlow()
 
-    fun loginWithEmail(email: String, pass: String) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+    fun onEvent(event: AuthEvent) {
+        when (event) {
+            is AuthEvent.LoginWithEmail -> {
+                viewModelScope.launch {
+                    _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+                    val result = authRepository.login(event.email, event.pass)
+                    result.onSuccess { user ->
+                        _uiState.update { it.copy(isLoading = false, user = user) }
+                    }.onFailure { exception ->
+                        _uiState.update { it.copy(isLoading = false, errorMessage = exception.message) }
+                    }
+                }
+            }
 
-            val result = authRepository.login(email, pass)
+            is AuthEvent.RegisterWithEmail -> {
+                viewModelScope.launch {
+                    _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+                    val result = authRepository.register(event.email, event.pass)
+                    result.onSuccess { user ->
+                        _uiState.update { it.copy(isLoading = false, user = user) }
+                    }.onFailure { exception ->
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                errorMessage = exception.message ?: "Erro desconhecido"
+                            )
+                        }
+                    }
+                }
+            }
 
-            result.onSuccess { user ->
-                _uiState.update { it.copy(isLoading = false, user = user) }
-            }.onFailure { exception ->
-                _uiState.update { it.copy(isLoading = false, errorMessage = exception.message) }
+            is AuthEvent.LoginWithGoogle -> {
+                viewModelScope.launch {
+                    _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+                    val result = authRepository.loginWithGoogle(event.idToken)
+                    result.onSuccess { user ->
+                        _uiState.update { it.copy(isLoading = false, user = user) }
+                    }.onFailure { exception ->
+                        _uiState.update {
+                            it.copy(
+                                isLoading = false,
+                                errorMessage = exception.message ?: "Erro no Google"
+                            )
+                        }
+                    }
+                }
+            }
+
+            AuthEvent.ResetError -> {
+                _uiState.update { it.copy(errorMessage = null) }
             }
         }
-    }
-
-    fun registerWithEmail(email: String, pass: String) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-            val result = authRepository.register(email, pass)
-
-            result.onSuccess { user ->
-                _uiState.update { it.copy(isLoading = false, user = user) }
-            }.onFailure { exception ->
-                _uiState.update { it.copy(isLoading = false, errorMessage = exception.message ?: "Erro desconhecido") }
-            }
-        }
-    }
-
-    fun loginWithGoogleToken(idToken: String) {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-            val result = authRepository.loginWithGoogle(idToken)
-
-            result.onSuccess { user ->
-                _uiState.update { it.copy(isLoading = false, user = user) }
-            }.onFailure { exception ->
-                _uiState.update { it.copy(isLoading = false, errorMessage = exception.message ?: "Erro no Google") }
-            }
-        }
-    }
-
-    fun resetError() {
-        _uiState.update { it.copy(errorMessage = null) }
     }
 }

@@ -34,9 +34,8 @@ fun RegisterRoute(
 
     RegisterScreen(
         uiState = uiState,
-        onRegisterClick = viewModel::registerWithEmail,
-        onNavigateBack = onNavigateBack,
-        onResetError = viewModel::resetError
+        onEvent = viewModel::onEvent,
+        onNavigateBack = onNavigateBack
     )
 }
 
@@ -44,9 +43,8 @@ fun RegisterRoute(
 @Composable
 fun RegisterScreen(
     uiState: AuthUiState,
-    onRegisterClick: (String, String) -> Unit,
+    onEvent: (AuthEvent) -> Unit,
     onNavigateBack: () -> Unit,
-    onResetError: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var email by remember { mutableStateOf("") }
@@ -91,7 +89,7 @@ fun RegisterScreen(
                 value = email,
                 onValueChange = {
                     email = it
-                    onResetError()
+                    onEvent(AuthEvent.ResetError)
                 },
                 label = { Text("E-mail") },
                 modifier = Modifier.fillMaxWidth(),
@@ -105,7 +103,7 @@ fun RegisterScreen(
                 value = password,
                 onValueChange = {
                     password = it
-                    onResetError()
+                    onEvent(AuthEvent.ResetError)
                 },
                 label = { Text("Senha (mín. 6 caracteres)") },
                 modifier = Modifier.fillMaxWidth(),
@@ -164,7 +162,7 @@ fun RegisterScreen(
             Spacer(modifier = Modifier.height(32.dp))
 
             Button(
-                onClick = { onRegisterClick(email, password) },
+                onClick = { onEvent(AuthEvent.RegisterWithEmail(email, password)) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),
@@ -192,35 +190,8 @@ private fun RegisterScreenPreview() {
     ExpenseAppTheme {
         RegisterScreen(
             uiState = AuthUiState(),
-            onRegisterClick = { _, _ -> },
-            onNavigateBack = {},
-            onResetError = {}
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun RegisterScreenLoadingPreview() {
-    ExpenseAppTheme {
-        RegisterScreen(
-            uiState = AuthUiState(isLoading = true),
-            onRegisterClick = { _, _ -> },
-            onNavigateBack = {},
-            onResetError = {}
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun RegisterScreenErrorPreview() {
-    ExpenseAppTheme {
-        RegisterScreen(
-            uiState = AuthUiState(errorMessage = "Este e-mail já está em uso."),
-            onRegisterClick = { _, _ -> },
-            onNavigateBack = {},
-            onResetError = {}
+            onEvent = {},
+            onNavigateBack = {}
         )
     }
 }

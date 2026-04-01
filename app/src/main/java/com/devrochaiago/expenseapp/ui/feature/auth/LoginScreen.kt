@@ -38,20 +38,16 @@ fun LoginRoute(
 
     LoginScreen(
         uiState = uiState,
-        onLoginClick = viewModel::loginWithEmail,
-        onGoogleLoginClick = viewModel::loginWithGoogleToken,
-        onNavigateToRegister = onNavigateToRegister,
-        onResetError = viewModel::resetError
+        onEvent = viewModel::onEvent,
+        onNavigateToRegister = onNavigateToRegister
     )
 }
 
 @Composable
 fun LoginScreen(
     uiState: AuthUiState,
-    onLoginClick: (String, String) -> Unit,
-    onGoogleLoginClick: (String) -> Unit,
+    onEvent: (AuthEvent) -> Unit,
     onNavigateToRegister: () -> Unit,
-    onResetError: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -79,7 +75,7 @@ fun LoginScreen(
             value = email,
             onValueChange = {
                 email = it
-                onResetError()
+                onEvent(AuthEvent.ResetError)
             },
             label = { Text("E-mail") },
             modifier = Modifier.fillMaxWidth(),
@@ -93,7 +89,7 @@ fun LoginScreen(
             value = password,
             onValueChange = {
                 password = it
-                onResetError()
+                onEvent(AuthEvent.ResetError)
             },
             label = { Text("Senha") },
             modifier = Modifier.fillMaxWidth(),
@@ -122,7 +118,7 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(32.dp))
 
         Button(
-            onClick = { onLoginClick(email, password) },
+            onClick = { onEvent(AuthEvent.LoginWithEmail(email, password)) },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp),
@@ -165,7 +161,7 @@ fun LoginScreen(
                         val credential = result.credential
                         if (credential is CustomCredential && credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
                             val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
-                            onGoogleLoginClick(googleIdTokenCredential.idToken)
+                            onEvent(AuthEvent.LoginWithGoogle(googleIdTokenCredential.idToken))
                         }
                     } catch (e: Exception) {
                         android.util.Log.e("AuthGoogle", "Erro no Credential Manager: ${e.message}")
