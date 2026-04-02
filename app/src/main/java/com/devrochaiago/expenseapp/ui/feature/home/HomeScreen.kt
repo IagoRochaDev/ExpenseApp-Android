@@ -203,6 +203,7 @@ fun HomeScreen(
                     confirmButton = {
                         TextButton(
                             onClick = {
+                                onEvent(HomeEvent.Logout)
                                 onEvent(HomeEvent.DismissLogoutDialog)
                                 onLogoutClick()
                             }

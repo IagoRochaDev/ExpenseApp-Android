@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.devrochaiago.expenseapp.domain.model.Transaction
 import com.devrochaiago.expenseapp.domain.model.TransactionType
+import com.devrochaiago.expenseapp.domain.repository.AuthRepository
 import com.devrochaiago.expenseapp.domain.repository.TransactionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
@@ -22,11 +23,13 @@ data class HomeUiState(
 sealed class HomeEvent {
     object ShowLogoutDialog : HomeEvent()
     object DismissLogoutDialog : HomeEvent()
+    object Logout : HomeEvent()
 }
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val repository: TransactionRepository
+    private val repository: TransactionRepository,
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     init {
@@ -74,6 +77,10 @@ class HomeViewModel @Inject constructor(
 
             HomeEvent.DismissLogoutDialog -> {
                 _showLogoutDialog.value = false
+            }
+
+            HomeEvent.Logout -> {
+                authRepository.logout()
             }
         }
     }
