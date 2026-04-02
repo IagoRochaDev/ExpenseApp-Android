@@ -30,6 +30,7 @@ sealed class AuthEvent {
     data class LoginWithGoogle(val idToken: String) : AuthEvent()
     object ResetError : AuthEvent()
     object CheckCurrentUser : AuthEvent()
+    data class ToggleLoading(val isLoading: Boolean) : AuthEvent()
 }
 
 @HiltViewModel
@@ -85,6 +86,10 @@ class AuthViewModel @Inject constructor(
 
             AuthEvent.CheckCurrentUser -> {
                 checkCurrentUser()
+            }
+
+            is AuthEvent.ToggleLoading -> {
+                _uiState.update { it.copy(isLoading = event.isLoading) }
             }
         }
     }

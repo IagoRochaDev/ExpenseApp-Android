@@ -41,8 +41,8 @@ fun LoginRoute(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    LaunchedEffect(uiState.user) {
-        if (uiState.user != null) {
+    LaunchedEffect(uiState.user, uiState.isCheckingUser) {
+        if (!uiState.isCheckingUser && uiState.user != null) {
             onLoginSuccess()
         }
     }
@@ -205,6 +205,7 @@ fun LoginScreen(
 
         OutlinedButton(
             onClick = {
+                onEvent(AuthEvent.ToggleLoading(true))
                 coroutineScope.launch {
                     try {
                         val credentialManager = CredentialManager.create(context)
@@ -219,8 +220,11 @@ fun LoginScreen(
                         if (credential is CustomCredential && credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
                             val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
                             onEvent(AuthEvent.LoginWithGoogle(googleIdTokenCredential.idToken))
+                        } else {
+                            onEvent(AuthEvent.ToggleLoading(false))
                         }
                     } catch (e: Exception) {
+                        onEvent(AuthEvent.ToggleLoading(false))
                         onEvent(AuthEvent.ResetError) 
                     }
                 }
@@ -230,7 +234,15 @@ fun LoginScreen(
                 .height(56.dp),
             enabled = !uiState.isLoading
         ) {
-            Text("Google", style = MaterialTheme.typography.titleMedium)
+            if (uiState.isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = MaterialTheme.colorScheme.primary,
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Text("Google", style = MaterialTheme.typography.titleMedium)
+            }
         }
 
         Spacer(modifier = Modifier.weight(1f))
