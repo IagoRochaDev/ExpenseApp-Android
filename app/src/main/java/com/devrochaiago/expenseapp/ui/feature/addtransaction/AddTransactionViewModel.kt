@@ -6,8 +6,11 @@ import com.devrochaiago.expenseapp.domain.model.Transaction
 import com.devrochaiago.expenseapp.domain.model.TransactionType
 import com.devrochaiago.expenseapp.domain.repository.TransactionRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -28,7 +31,11 @@ sealed class AddTransactionEvent {
     data class OnTypeChange(val isExpense: Boolean) : AddTransactionEvent()
     data class OnCategoryChange(val category: String) : AddTransactionEvent()
     data class OnDateChange(val dateMillis: Long) : AddTransactionEvent()
-    data class OnSaveClick(val onSuccess: () -> Unit) : AddTransactionEvent()
+    object OnSaveClick : AddTransactionEvent()
+}
+
+sealed class AddTransactionUiEffect {
+    object NavigateBack : AddTransactionUiEffect()
 }
 
 @HiltViewModel
@@ -38,6 +45,9 @@ class AddTransactionViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(AddTransactionUiState())
     val uiState: StateFlow<AddTransactionUiState> = _uiState.asStateFlow()
+
+    private val _uiEffect = MutableSharedFlow<AddTransactionUiEffect>()
+    val uiEffect: SharedFlow<AddTransactionUiEffect> = _uiEffect.asSharedFlow()
 
     fun onEvent(event: AddTransactionEvent) {
         when (event) {
@@ -68,13 +78,13 @@ class AddTransactionViewModel @Inject constructor(
                 _uiState.update { it.copy(dateMillis = event.dateMillis) }
             }
 
-            is AddTransactionEvent.OnSaveClick -> {
-                saveTransaction(event.onSuccess)
+            AddTransactionEvent.OnSaveClick -> {
+                saveTransaction()
             }
         }
     }
 
-    private fun saveTransaction(onSuccess: () -> Unit) {
+    private fun saveTransaction() {
         val currentState = _uiState.value
 
         if (currentState.isLoading) return
@@ -95,9 +105,13 @@ class AddTransactionViewModel @Inject constructor(
         )
 
         viewModelScope.launch {
-            repository.insertTransaction(transaction)
-            _uiState.update { it.copy(isLoading = false) }
-            onSuccess()
+            try {
+                repository.insertTransaction(transaction)
+                _uiState.update { it.copy(isLoading = false) }
+                _uiEffect.emit(AddTransactionUiEffect.NavigateBack)
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false) }
+            }
         }
     }
 }

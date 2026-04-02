@@ -38,6 +38,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -57,10 +58,12 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.devrochaiago.expenseapp.ui.theme.ExpenseAppTheme
 import com.devrochaiago.expenseapp.ui.theme.GreenIncome
 import com.devrochaiago.expenseapp.ui.theme.RedExpense
+import kotlinx.coroutines.flow.collectLatest
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTransactionRoute(
     onNavigateBack: () -> Unit,
@@ -68,11 +71,46 @@ fun AddTransactionRoute(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    AddTransactionScreen(
-        uiState = uiState,
-        onEvent = viewModel::onEvent,
-        onNavigateBack = onNavigateBack
-    )
+    LaunchedEffect(viewModel.uiEffect) {
+        viewModel.uiEffect.collectLatest { effect ->
+            when (effect) {
+                AddTransactionUiEffect.NavigateBack -> onNavigateBack()
+            }
+        }
+    }
+
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        text = "Nova Transação",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Voltar"
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.background,
+        modifier = Modifier.fillMaxSize()
+    ) { paddingValues ->
+        AddTransactionScreen(
+            uiState = uiState,
+            onEvent = viewModel::onEvent,
+            modifier = Modifier.padding(paddingValues)
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -80,7 +118,6 @@ fun AddTransactionRoute(
 fun AddTransactionScreen(
     uiState: AddTransactionUiState,
     onEvent: (AddTransactionEvent) -> Unit,
-    onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var expandedCategory by remember { mutableStateOf(false) }
@@ -95,199 +132,171 @@ fun AddTransactionScreen(
     val dateFormatter = remember { SimpleDateFormat("dd 'de' MMMM 'de' yyyy", Locale("pt", "BR")) }
     val formattedDate = dateFormatter.format(Date(uiState.dateMillis))
 
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = { 
-                    Text(
-                        text = "Nova Transação", 
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold 
-                    ) 
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack, 
-                            contentDescription = "Voltar"
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+    Column(
+        modifier = modifier
+            .padding(horizontal = 24.dp)
+            .fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Spacer(modifier = Modifier.height(16.dp))
+
+        TransactionTypeSelector(
+            isExpense = uiState.isExpense,
+            onTypeSelected = { onEvent(AddTransactionEvent.OnTypeChange(it)) }
+        )
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        Text(
+            text = "Valor",
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        OutlinedTextField(
+            value = uiState.amount,
+            onValueChange = { onEvent(AddTransactionEvent.OnAmountChange(it)) },
+            textStyle = MaterialTheme.typography.displayMedium.copy(
+                textAlign = TextAlign.Center,
+                fontWeight = FontWeight.Bold,
+                color = if (uiState.isExpense) RedExpense else GreenIncome
+            ),
+            prefix = {
+                Text(
+                    "R$ ",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-            )
-        },
-        containerColor = MaterialTheme.colorScheme.background,
-        modifier = modifier.fillMaxSize()
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .padding(paddingValues)
-                .padding(horizontal = 24.dp)
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Spacer(modifier = Modifier.height(16.dp))
-
-            TransactionTypeSelector(
-                isExpense = uiState.isExpense,
-                onTypeSelected = { onEvent(AddTransactionEvent.OnTypeChange(it)) }
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            Text(
-                text = "Valor",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            OutlinedTextField(
-                value = uiState.amount,
-                onValueChange = { onEvent(AddTransactionEvent.OnAmountChange(it)) },
-                textStyle = MaterialTheme.typography.displayMedium.copy(
+            },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+            singleLine = true,
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = Color.Transparent,
+                unfocusedBorderColor = Color.Transparent,
+                focusedContainerColor = Color.Transparent,
+                unfocusedContainerColor = Color.Transparent
+            ),
+            placeholder = {
+                Text(
+                    "0,00",
+                    style = MaterialTheme.typography.displayMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                     textAlign = TextAlign.Center,
-                    fontWeight = FontWeight.Bold,
-                    color = if (uiState.isExpense) RedExpense else GreenIncome
-                ),
-                prefix = {
-                    Text(
-                        "R$ ",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color.Transparent,
-                    unfocusedBorderColor = Color.Transparent,
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent
-                ),
-                placeholder = {
-                    Text(
-                        "0,00",
-                        style = MaterialTheme.typography.displayMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                },
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(32.dp))
-
-            OutlinedTextField(
-                value = uiState.title,
-                onValueChange = { onEvent(AddTransactionEvent.OnTitleChange(it)) },
-                label = { Text("Título (Ex: Conta de Luz)") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                shape = RoundedCornerShape(12.dp)
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            ExposedDropdownMenuBox(
-                expanded = expandedCategory,
-                onExpandedChange = { expandedCategory = !expandedCategory },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                OutlinedTextField(
-                    value = uiState.category,
-                    onValueChange = {},
-                    readOnly = true,
-                    label = { Text("Categoria") },
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedCategory) },
-                    modifier = Modifier
-                        .menuAnchor()
-                        .fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp)
+                    modifier = Modifier.fillMaxWidth()
                 )
-                ExposedDropdownMenu(
-                    expanded = expandedCategory,
-                    onDismissRequest = { expandedCategory = false }
-                ) {
-                    categories.forEach { category ->
-                        DropdownMenuItem(
-                            text = { Text(category) },
-                            onClick = {
-                                onEvent(AddTransactionEvent.OnCategoryChange(category))
-                                expandedCategory = false
-                            }
-                        )
-                    }
-                }
-            }
+            },
+            modifier = Modifier.fillMaxWidth()
+        )
 
-            Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
+        OutlinedTextField(
+            value = uiState.title,
+            onValueChange = { onEvent(AddTransactionEvent.OnTitleChange(it)) },
+            label = { Text("Título (Ex: Conta de Luz)") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            shape = RoundedCornerShape(12.dp)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        ExposedDropdownMenuBox(
+            expanded = expandedCategory,
+            onExpandedChange = { expandedCategory = !expandedCategory },
+            modifier = Modifier.fillMaxWidth()
+        ) {
             OutlinedTextField(
-                value = formattedDate,
+                value = uiState.category,
                 onValueChange = {},
                 readOnly = true,
-                label = { Text("Data") },
-                trailingIcon = {
-                    IconButton(onClick = { showDatePicker = true }) {
-                        Icon(
-                            imageVector = Icons.Default.CalendarMonth,
-                            contentDescription = "Selecionar Data"
-                        )
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
+                label = { Text("Categoria") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedCategory) },
+                modifier = Modifier
+                    .menuAnchor()
+                    .fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp)
             )
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            Button(
-                onClick = { onEvent(AddTransactionEvent.OnSaveClick(onSuccess = onNavigateBack)) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .padding(bottom = 16.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (uiState.isExpense) RedExpense else GreenIncome
-                )
+            ExposedDropdownMenu(
+                expanded = expandedCategory,
+                onDismissRequest = { expandedCategory = false }
             ) {
-                if (uiState.isLoading) {
-                    CircularProgressIndicator(
-                        color = Color.White,
-                        modifier = Modifier.size(24.dp),
-                        strokeWidth = 2.dp
+                categories.forEach { category ->
+                    DropdownMenuItem(
+                        text = { Text(category) },
+                        onClick = {
+                            onEvent(AddTransactionEvent.OnCategoryChange(category))
+                            expandedCategory = false
+                        }
                     )
-                } else {
-                    Icon(imageVector = Icons.Default.Check, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Salvar Transação", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
 
-        if (showDatePicker) {
-            val datePickerState = rememberDatePickerState(initialSelectedDateMillis = uiState.dateMillis)
-            DatePickerDialog(
-                onDismissRequest = { showDatePicker = false },
-                confirmButton = {
-                    TextButton(onClick = {
-                        datePickerState.selectedDateMillis?.let { onEvent(AddTransactionEvent.OnDateChange(it)) }
-                        showDatePicker = false
-                    }) {
-                        Text("OK")
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showDatePicker = false }) {
-                        Text("Cancelar")
-                    }
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = formattedDate,
+            onValueChange = {},
+            readOnly = true,
+            label = { Text("Data") },
+            trailingIcon = {
+                IconButton(onClick = { showDatePicker = true }) {
+                    Icon(
+                        imageVector = Icons.Default.CalendarMonth,
+                        contentDescription = "Selecionar Data"
+                    )
                 }
-            ) {
-                DatePicker(state = datePickerState)
+            },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp)
+        )
+
+        Spacer(modifier = Modifier.weight(1f))
+
+        Button(
+            onClick = { onEvent(AddTransactionEvent.OnSaveClick) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .padding(bottom = 16.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = if (uiState.isExpense) RedExpense else GreenIncome
+            )
+        ) {
+            if (uiState.isLoading) {
+                CircularProgressIndicator(
+                    color = Color.White,
+                    modifier = Modifier.size(24.dp),
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Icon(imageVector = Icons.Default.Check, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Salvar Transação", fontSize = 16.sp, fontWeight = FontWeight.Bold)
             }
+        }
+    }
+
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = uiState.dateMillis)
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { onEvent(AddTransactionEvent.OnDateChange(it)) }
+                    showDatePicker = false
+                }) {
+                    Text("OK")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text("Cancelar")
+                }
+            }
+        ) {
+            DatePicker(state = datePickerState)
         }
     }
 }
@@ -347,8 +356,7 @@ private fun AddTransactionScreenPreview() {
     ExpenseAppTheme {
         AddTransactionScreen(
             uiState = AddTransactionUiState(),
-            onEvent = {},
-            onNavigateBack = {}
+            onEvent = {}
         )
     }
 }
