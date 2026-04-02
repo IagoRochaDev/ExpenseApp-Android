@@ -1,15 +1,24 @@
 package com.devrochaiago.expenseapp.ui.feature.auth
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -47,21 +56,19 @@ fun RegisterScreen(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var confirmPassword by remember { mutableStateOf("") }
-
+    val focusManager = LocalFocusManager.current
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
+    var confirmPassword by remember { mutableStateOf("") }
 
-    val isFormValid = email.isNotBlank() &&
-            password.length >= 6 &&
-            password == confirmPassword
+    val isFormValid = uiState.email.isNotBlank() &&
+            uiState.password.length >= 6 &&
+            uiState.password == confirmPassword
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("") },
+                title = { Text("Criar Conta", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
@@ -73,43 +80,38 @@ fun RegisterScreen(
         Column(
             modifier = modifier
                 .fillMaxSize()
+                .imePadding()
+                .verticalScroll(rememberScrollState())
                 .padding(paddingValues)
                 .padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "Criar Conta",
-                style = MaterialTheme.typography.headlineLarge,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(bottom = 32.dp)
-            )
+            Spacer(modifier = Modifier.height(32.dp))
 
             OutlinedTextField(
-                value = email,
-                onValueChange = {
-                    email = it
-                    onEvent(AuthEvent.ResetError)
-                },
+                value = uiState.email,
+                onValueChange = { onEvent(AuthEvent.OnEmailChange(it)) },
                 label = { Text("E-mail") },
+                leadingIcon = { Icon(Icons.Default.Email, contentDescription = null) },
                 modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-                singleLine = true
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email, imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
+                singleLine = true,
+                isError = uiState.errorMessage != null
             )
 
             Spacer(modifier = Modifier.height(16.dp))
 
             OutlinedTextField(
-                value = password,
-                onValueChange = {
-                    password = it
-                    onEvent(AuthEvent.ResetError)
-                },
+                value = uiState.password,
+                onValueChange = { onEvent(AuthEvent.OnPasswordChange(it)) },
                 label = { Text("Senha (mín. 6 caracteres)") },
+                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Next),
+                keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Down) }),
                 trailingIcon = {
                     val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
                     IconButton(onClick = { passwordVisible = !passwordVisible }) {
@@ -124,11 +126,16 @@ fun RegisterScreen(
                 value = confirmPassword,
                 onValueChange = { confirmPassword = it },
                 label = { Text("Confirmar Senha") },
+                leadingIcon = { Icon(Icons.Default.Lock, contentDescription = null) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 visualTransformation = if (confirmPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                isError = confirmPassword.isNotBlank() && password != confirmPassword,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = {
+                    focusManager.clearFocus()
+                    if (isFormValid) onEvent(AuthEvent.RegisterClick)
+                }),
+                isError = confirmPassword.isNotBlank() && uiState.password != confirmPassword,
                 trailingIcon = {
                     val image = if (confirmPasswordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
                     IconButton(onClick = { confirmPasswordVisible = !confirmPasswordVisible }) {
@@ -137,14 +144,12 @@ fun RegisterScreen(
                 }
             )
 
-            if (confirmPassword.isNotBlank() && password != confirmPassword) {
+            if (confirmPassword.isNotBlank() && uiState.password != confirmPassword) {
                 Text(
                     text = "As senhas não coincidem",
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier
-                        .align(Alignment.Start)
-                        .padding(top = 4.dp, start = 16.dp)
+                    modifier = Modifier.align(Alignment.Start).padding(top = 4.dp, start = 16.dp)
                 )
             }
 
@@ -153,19 +158,18 @@ fun RegisterScreen(
                     text = uiState.errorMessage,
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier
-                        .padding(top = 16.dp)
-                        .align(Alignment.Start)
+                    modifier = Modifier.padding(top = 16.dp).align(Alignment.Start)
                 )
             }
 
             Spacer(modifier = Modifier.height(32.dp))
 
             Button(
-                onClick = { onEvent(AuthEvent.RegisterWithEmail(email, password)) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(50.dp),
+                onClick = {
+                    focusManager.clearFocus()
+                    onEvent(AuthEvent.RegisterClick)
+                },
+                modifier = Modifier.fillMaxWidth().height(56.dp),
                 enabled = !uiState.isLoading && isFormValid
             ) {
                 if (uiState.isLoading) {
@@ -175,7 +179,7 @@ fun RegisterScreen(
                         strokeWidth = 2.dp
                     )
                 } else {
-                    Text("Cadastrar")
+                    Text("Cadastrar", style = MaterialTheme.typography.titleMedium)
                 }
             }
 
@@ -189,7 +193,7 @@ fun RegisterScreen(
 private fun RegisterScreenPreview() {
     ExpenseAppTheme {
         RegisterScreen(
-            uiState = AuthUiState(),
+            uiState = AuthUiState(email = "test@example.com"),
             onEvent = {},
             onNavigateBack = {}
         )

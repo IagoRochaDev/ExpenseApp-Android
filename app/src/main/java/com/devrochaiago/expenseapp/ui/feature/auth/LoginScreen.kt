@@ -1,23 +1,34 @@
 package com.devrochaiago.expenseapp.ui.feature.auth
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.devrochaiago.expenseapp.ui.theme.ExpenseAppTheme
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import kotlinx.coroutines.launch
@@ -36,11 +47,17 @@ fun LoginRoute(
         }
     }
 
-    LoginScreen(
-        uiState = uiState,
-        onEvent = viewModel::onEvent,
-        onNavigateToRegister = onNavigateToRegister
-    )
+    if (uiState.isCheckingUser) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+    } else {
+        LoginScreen(
+            uiState = uiState,
+            onEvent = viewModel::onEvent,
+            onNavigateToRegister = onNavigateToRegister
+        )
+    }
 }
 
 @Composable
@@ -52,77 +69,110 @@ fun LoginScreen(
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
 
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier
             .fillMaxSize()
-            .padding(24.dp),
+            .imePadding()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 24.dp, vertical = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
+
+        Spacer(modifier = Modifier.height(32.dp))
+
         Text(
             text = "ExpenseApp",
-            style = MaterialTheme.typography.headlineLarge,
+            style = MaterialTheme.typography.displaySmall.copy(fontWeight = FontWeight.Bold),
             color = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(bottom = 32.dp)
+        )
+        Text(
+            text = "Bem-vindo de volta!",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 8.dp, bottom = 40.dp)
         )
 
         OutlinedTextField(
-            value = email,
-            onValueChange = {
-                email = it
-                onEvent(AuthEvent.ResetError)
-            },
+            value = uiState.email,
+            onValueChange = { onEvent(AuthEvent.OnEmailChange(it)) },
             label = { Text("E-mail") },
+            leadingIcon = {
+                Icon(imageVector = Icons.Default.Email, contentDescription = null)
+            },
             modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            singleLine = true
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Email,
+                imeAction = ImeAction.Next 
+            ),
+            keyboardActions = KeyboardActions(
+                onNext = { focusManager.moveFocus(FocusDirection.Down) }
+            ),
+            singleLine = true,
+            isError = uiState.errorMessage != null
         )
 
         Spacer(modifier = Modifier.height(16.dp))
+        
 
         OutlinedTextField(
-            value = password,
-            onValueChange = {
-                password = it
-                onEvent(AuthEvent.ResetError)
-            },
+            value = uiState.password,
+            onValueChange = { onEvent(AuthEvent.OnPasswordChange(it)) },
             label = { Text("Senha") },
+            leadingIcon = {
+                Icon(imageVector = Icons.Default.Lock, contentDescription = null)
+            },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Password,
+                imeAction = ImeAction.Done 
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = {
+                    focusManager.clearFocus() 
+                    if (uiState.email.isNotBlank() && uiState.password.isNotBlank()) {
+                        onEvent(AuthEvent.LoginClick)
+                    }
+                }
+            ),
+            isError = uiState.errorMessage != null,
             trailingIcon = {
-                val image = if (passwordVisible) Icons.Filled.Visibility else Icons.Filled.VisibilityOff
+                val image = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
                 IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                    Icon(imageVector = image, contentDescription = "Mostrar senha")
+                    Icon(imageVector = image, contentDescription = if (passwordVisible) "Ocultar senha" else "Mostrar senha")
                 }
             }
         )
-
+        
         if (uiState.errorMessage != null) {
             Text(
                 text = uiState.errorMessage,
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier
-                    .padding(top = 8.dp)
+                    .padding(top = 4.dp)
                     .align(Alignment.Start)
             )
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(24.dp))
+
 
         Button(
-            onClick = { onEvent(AuthEvent.LoginWithEmail(email, password)) },
+            onClick = {
+                focusManager.clearFocus()
+                onEvent(AuthEvent.LoginClick)
+            },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(50.dp),
-            enabled = !uiState.isLoading && email.isNotBlank() && password.isNotBlank()
+                .height(56.dp),
+            enabled = !uiState.isLoading && uiState.email.isNotBlank() && uiState.password.isNotBlank()
         ) {
             if (uiState.isLoading) {
                 CircularProgressIndicator(
@@ -131,56 +181,80 @@ fun LoginScreen(
                     strokeWidth = 2.dp
                 )
             } else {
-                Text("Entrar")
+                Text("Entrar", style = MaterialTheme.typography.titleMedium)
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            HorizontalDivider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
+            Text(
+                text = "ou continue com",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+            HorizontalDivider(modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.outlineVariant)
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
 
         OutlinedButton(
             onClick = {
                 coroutineScope.launch {
                     try {
                         val credentialManager = CredentialManager.create(context)
-
                         val googleIdOption = GetGoogleIdOption.Builder()
                             .setFilterByAuthorizedAccounts(false)
                             .setServerClientId("936481238482-i9th57q3nd4ds1i5vgr90bbj71hbv0np.apps.googleusercontent.com")
                             .setAutoSelectEnabled(true)
                             .build()
-
-                        val request = GetCredentialRequest.Builder()
-                            .addCredentialOption(googleIdOption)
-                            .build()
-
-                        val result = credentialManager.getCredential(
-                            request = request,
-                            context = context
-                        )
-
+                        val request = GetCredentialRequest.Builder().addCredentialOption(googleIdOption).build()
+                        val result = credentialManager.getCredential(context, request)
                         val credential = result.credential
                         if (credential is CustomCredential && credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
                             val googleIdTokenCredential = GoogleIdTokenCredential.createFrom(credential.data)
                             onEvent(AuthEvent.LoginWithGoogle(googleIdTokenCredential.idToken))
                         }
                     } catch (e: Exception) {
-                        android.util.Log.e("AuthGoogle", "Erro no Credential Manager: ${e.message}")
-                        e.printStackTrace()
+                        onEvent(AuthEvent.ResetError) 
                     }
                 }
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(50.dp),
+                .height(56.dp),
             enabled = !uiState.isLoading
         ) {
-            Text("Entrar com Google")
+            Text("Google", style = MaterialTheme.typography.titleMedium)
         }
 
         Spacer(modifier = Modifier.weight(1f))
 
-        TextButton(onClick = onNavigateToRegister) {
-            Text("Não tem uma conta? Cadastre-se")
+        TextButton(
+            onClick = onNavigateToRegister,
+            modifier = Modifier.padding(bottom = 16.dp)
+        ) {
+            Text(
+                text = "Não tem uma conta? Cadastre-se",
+                fontWeight = FontWeight.SemiBold
+            )
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun LoginScreenPreview() {
+    ExpenseAppTheme {
+        LoginScreen(
+            uiState = AuthUiState(email = "test@example.com"),
+            onEvent = {},
+            onNavigateToRegister = {}
+        )
     }
 }
